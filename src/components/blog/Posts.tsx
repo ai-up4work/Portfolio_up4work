@@ -7,9 +7,11 @@ import { IBlogPost } from '@/lib/models';
 interface PostsProps {
   range?: [number, number?];
   columns?: string;
+  thumbnail?: boolean;
+  direction?: 'row' | 'column';
 }
 
-export function Posts({ range, columns = '1' }: PostsProps) {
+export function Posts({ range, columns = '1', thumbnail = false, direction = 'row' }: PostsProps) {
   const [posts, setPosts] = useState<IBlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,32 +47,57 @@ export function Posts({ range, columns = '1' }: PostsProps) {
 
   return (
     <Column fillWidth gap="l">
-      {posts.map((post) => (
-        <Row key={post.slug} fillWidth gap="m">
-          <Column flex={1}>
-            <Heading as="h3" variant="heading-strong-l">
-              {post.title}
-            </Heading>
-            <Text variant="body-default-m" onBackground="neutral-weak">
-              {post.description}
-            </Text>
-            {post.tags && (
-              <Row gap="8" marginTop="8">
-                {post.tags.map((tag) => (
-                  <Text key={tag} variant="label-default-s" onBackground="neutral-medium">
-                    #{tag}
-                  </Text>
-                ))}
-              </Row>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gap: 'var(--static-space-24)'
+      }}>
+        {posts.map((post) => (
+          <Column 
+            key={post.slug} 
+            fillWidth 
+            gap="m"
+            style={{
+              flexDirection: direction
+            }}
+          >
+            {thumbnail && post.image && (
+              <img 
+                src={post.image} 
+                alt={post.title} 
+                style={{ 
+                  width: '100%', 
+                  height: '200px',
+                  objectFit: 'cover',
+                  borderRadius: 'var(--radius-m)'
+                }} 
+              />
             )}
-            {post.metadata?.readTime && (
-              <Text variant="label-default-s" onBackground="neutral-weak" marginTop="4">
-                {post.metadata.readTime}
+            <Column flex={1}>
+              <Heading as="h3" variant="heading-strong-l">
+                {post.title}
+              </Heading>
+              <Text variant="body-default-m" onBackground="neutral-weak">
+                {post.description}
               </Text>
-            )}
+              {post.tags && (
+                <Row gap="8" marginTop="8">
+                  {post.tags.map((tag) => (
+                    <Text key={tag} variant="label-default-s" onBackground="neutral-medium">
+                      #{tag}
+                    </Text>
+                  ))}
+                </Row>
+              )}
+              {post.metadata?.readTime && (
+                <Text variant="label-default-s" onBackground="neutral-weak" marginTop="4">
+                  {post.metadata.readTime}
+                </Text>
+              )}
+            </Column>
           </Column>
-        </Row>
-      ))}
+        ))}
+      </div>
     </Column>
   );
 }
