@@ -4,11 +4,12 @@ import { BlogPost } from '@/lib/models';
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
-    const post = await BlogPost.findOne({ slug: params.slug });
+    const post = await BlogPost.findOne({ slug });
     
     if (!post) {
       return NextResponse.json(
@@ -19,7 +20,7 @@ export async function GET(
     
     // Increment view count
     await BlogPost.updateOne(
-      { slug: params.slug },
+      { slug },
       { $inc: { 'metadata.views': 1 } }
     );
     
@@ -35,13 +36,14 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
     const body = await request.json();
     const post = await BlogPost.findOneAndUpdate(
-      { slug: params.slug },
+      { slug },
       body,
       { new: true, runValidators: true }
     );
@@ -65,11 +67,12 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
-    const post = await BlogPost.findOneAndDelete({ slug: params.slug });
+    const post = await BlogPost.findOneAndDelete({ slug });
     
     if (!post) {
       return NextResponse.json(

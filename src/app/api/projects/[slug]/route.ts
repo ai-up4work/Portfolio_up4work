@@ -4,11 +4,12 @@ import { Project } from '@/lib/models';
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
-    const project = await Project.findOne({ slug: params.slug });
+    const project = await Project.findOne({ slug });
     
     if (!project) {
       return NextResponse.json(
@@ -19,7 +20,7 @@ export async function GET(
     
     // Increment view count
     await Project.updateOne(
-      { slug: params.slug },
+      { slug },
       { $inc: { 'metadata.views': 1 } }
     );
     
@@ -35,13 +36,14 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
     const body = await request.json();
     const project = await Project.findOneAndUpdate(
-      { slug: params.slug },
+      { slug },
       body,
       { new: true, runValidators: true }
     );
@@ -65,11 +67,12 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
-    const project = await Project.findOneAndDelete({ slug: params.slug });
+    const project = await Project.findOneAndDelete({ slug });
     
     if (!project) {
       return NextResponse.json(
