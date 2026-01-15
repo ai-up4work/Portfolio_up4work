@@ -145,7 +145,6 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen" style={{ 
-      background: 'var(--page-background)',
       color: 'var(--neutral-on-background-strong)'
     }}>
       <div style={{ 
