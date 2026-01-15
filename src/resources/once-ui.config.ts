@@ -1,4 +1,4 @@
-import {
+import type {
   DataStyleConfig,
   DisplayConfig,
   EffectsConfig,
@@ -10,11 +10,11 @@ import {
   SchemaConfig,
   SocialSharingConfig,
   StyleConfig,
-} from "@/types";
-import { home } from "./index";
+} from "@/types"
+import { home } from "./index"
 
 // IMPORTANT: Replace with your own domain address - it's used for SEO in meta tags and schema
-const baseURL: string = "https://demo.magic-portfolio.com";
+const baseURL: string = "https://demo.magic-portfolio.com"
 
 const routes: RoutesConfig = {
   "/": true,
@@ -22,54 +22,55 @@ const routes: RoutesConfig = {
   "/work": true,
   "/blog": true,
   "/gallery": true,
-};
+  "/admin": true, // Added /admin route to enable access
+}
 
 const display: DisplayConfig = {
   location: true,
   time: true,
   themeSwitcher: true,
-};
+}
 
 // Enable password protection on selected routes
 // Set password in the .env file, refer to .env.example
 const protectedRoutes: ProtectedRoutesConfig = {
   "/work/automate-design-handovers-with-a-figma-to-code-pipeline": true,
-};
+}
 
 // Import and set font for each variant
-import { Geist } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google"
+import { Geist_Mono } from "next/font/google"
 
 const heading = Geist({
   variable: "--font-heading",
   subsets: ["latin"],
   display: "swap",
-});
+})
 
 const body = Geist({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
-});
+})
 
 const label = Geist({
   variable: "--font-label",
   subsets: ["latin"],
   display: "swap",
-});
+})
 
 const code = Geist_Mono({
   variable: "--font-code",
   subsets: ["latin"],
   display: "swap",
-});
+})
 
 const fonts: FontsConfig = {
   heading: heading,
   body: body,
   label: label,
   code: code,
-};
+}
 
 // default customization applied to the HTML in the main layout.tsx
 const style: StyleConfig = {
@@ -83,7 +84,7 @@ const style: StyleConfig = {
   surface: "translucent", // filled | translucent
   transition: "all", // all | micro | macro
   scaling: "100", // 90 | 95 | 100 | 105 | 110
-};
+}
 
 const dataStyle: DataStyleConfig = {
   variant: "gradient", // flat | gradient | outline
@@ -97,7 +98,7 @@ const dataStyle: DataStyleConfig = {
     fontSize: 11,
     line: false,
   },
-};
+}
 
 const effects: EffectsConfig = {
   mask: {
@@ -138,7 +139,7 @@ const effects: EffectsConfig = {
     thickness: 1,
     angle: 45,
   },
-};
+}
 
 const mailchimp: MailchimpConfig = {
   action: "https://url/subscribe/post?parameters",
@@ -182,7 +183,7 @@ const mailchimp: MailchimpConfig = {
       angle: 90,
     },
   },
-};
+}
 
 // default schema data
 const schema: SchemaConfig = {
@@ -191,14 +192,14 @@ const schema: SchemaConfig = {
   name: "Once UI",
   description: home.description,
   email: "lorant@once-ui.com",
-};
+}
 
 // social links
 const sameAs: SameAsConfig = {
   threads: "https://www.threads.com/@once_ui",
   linkedin: "https://www.linkedin.com/company/once-ui/",
   discord: "https://discord.com/invite/5EyAQ4eNdS",
-};
+}
 
 // social sharing configuration for blog posts
 const socialSharing: SocialSharingConfig = {
@@ -214,7 +215,7 @@ const socialSharing: SocialSharingConfig = {
     email: true,
     copyLink: true,
   },
-};
+}
 
 export {
   display,
@@ -229,4 +230,4 @@ export {
   socialSharing,
   effects,
   dataStyle,
-};
+}
