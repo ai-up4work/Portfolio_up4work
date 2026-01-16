@@ -16,6 +16,16 @@ const nextConfig = {
         hostname: "www.google.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "**",
+      },
+       {
+        protocol: "https",
+        hostname: "unsplash.com",
+        pathname: "**",
+      },
     ],
   },
   sassOptions: {
