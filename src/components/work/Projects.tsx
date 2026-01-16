@@ -1,33 +1,53 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Column, Row, Heading, Text } from '@once-ui-system/core';
+import { Column } from '@once-ui-system/core';
+import { ProjectCard } from '@/components';
 import { IProject } from '@/lib/models';
 
 interface ProjectsProps {
   range?: [number, number?];
-  columns?: string;
+  exclude?: string[];
 }
 
-export function Projects({ range, columns = '1' }: ProjectsProps) {
+export function Projects({ range, exclude }: ProjectsProps) {
   const [projects, setProjects] = useState<IProject[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Fallback images from your own domain
+  const fallbackImages = [
+    '/images/placeholder-project-1.jpg',
+    '/images/placeholder-project-2.jpg',
+    '/images/placeholder-project-3.jpg'
+  ];
 
   useEffect(() => {
     async function fetchProjects() {
       try {
         const response = await fetch('/api/projects?featured=true');
         const result = await response.json();
-        
+
         if (result.success) {
           let filtered = result.data;
-          
-          if (range) {
-            const [start, end] = range;
-            filtered = filtered.slice(start - 1, end || start);
+
+          // Exclude by slug (exact match)
+          if (exclude && exclude.length > 0) {
+            filtered = filtered.filter((project: IProject) => 
+              !exclude.includes(project.slug)
+            );
           }
-          
-          setProjects(filtered);
+
+          // Sort by publication date
+          const sorted = filtered.sort((a: IProject, b: IProject) => {
+            return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          });
+
+          // Apply range filter
+          const displayed = range
+            ? sorted.slice(range[0] - 1, range[1] ?? sorted.length)
+            : sorted;
+
+          setProjects(displayed);
         }
       } catch (error) {
         console.error('Failed to fetch projects:', error);
@@ -37,34 +57,32 @@ export function Projects({ range, columns = '1' }: ProjectsProps) {
     }
 
     fetchProjects();
-  }, [range]);
+  }, [range, exclude]);
 
   if (loading) {
-    return <div>Loading projects...</div>;
+    return (
+      <Column fillWidth gap="m" paddingY="l">
+        Loading projects...
+      </Column>
+    );
   }
 
   return (
     <Column fillWidth gap="l">
-      {projects.map((project) => (
-        <Row key={project.slug} fillWidth gap="m">
-          <Column flex={1}>
-            <Heading as="h3" variant="heading-strong-l">
-              {project.title}
-            </Heading>
-            <Text variant="body-default-m" onBackground="neutral-weak">
-              {project.description}
-            </Text>
-            {project.tags && (
-              <Row gap="8" marginTop="8">
-                {project.tags.map((tag) => (
-                  <Text key={tag} variant="label-default-s" onBackground="neutral-medium">
-                    #{tag}
-                  </Text>
-                ))}
-              </Row>
-            )}
-          </Column>
-        </Row>
+      {projects.map((project, index) => (
+        <ProjectCard
+          key={project.slug || index}
+          href={`/projects/${project.slug}`}
+          images={project.images && project.images.length > 0 
+            ? project.images 
+            : fallbackImages
+          }
+          title={project.title}
+          description={project.description}
+          content={project.content || ''}
+          avatars={[{ src: '/images/logo.png' }]}
+          link={project.link || ''}
+        />
       ))}
     </Column>
   );
