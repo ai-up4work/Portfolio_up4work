@@ -14,13 +14,6 @@ export function Projects({ range, exclude }: ProjectsProps) {
   const [projects, setProjects] = useState<IProject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fallback images from your own domain
-  const fallbackImages = [
-    '/images/placeholder-project-1.jpg',
-    '/images/placeholder-project-2.jpg',
-    '/images/placeholder-project-3.jpg'
-  ];
-
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -32,7 +25,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
 
           // Exclude by slug (exact match)
           if (exclude && exclude.length > 0) {
-            filtered = filtered.filter((project: IProject) => 
+            filtered = filtered.filter((project: IProject) =>
               !exclude.includes(project.slug)
             );
           }
@@ -61,7 +54,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
 
   if (loading) {
     return (
-      <Column fillWidth gap="m" paddingY="l">
+      <Column fillWidth gap="l">
         Loading projects...
       </Column>
     );
@@ -73,10 +66,6 @@ export function Projects({ range, exclude }: ProjectsProps) {
         <ProjectCard
           key={project.slug || index}
           href={`/projects/${project.slug}`}
-          images={project.images && project.images.length > 0 
-            ? project.images 
-            : fallbackImages
-          }
           title={project.title}
           description={project.description}
           content={project.content || ''}
