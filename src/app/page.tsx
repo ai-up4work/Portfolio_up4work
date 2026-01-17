@@ -16,6 +16,9 @@ import { home, about, person, baseURL, routes } from "@/resources";
 import ContactCTA from "@/components/ContactCTA";
 import { Projects } from "@/components/work/Projects";
 import { Posts } from "@/components/blog/Posts";
+import ServicesSection from "@/components/ServicesSection";
+import TechStackSection from "@/components/TechStackSection";
+
 
 export async function generateMetadata() {
   return Meta.generate({
@@ -125,6 +128,8 @@ export default function Home() {
         </Column>
       )}
       <Projects range={[2]} />
+      <ServicesSection />
+      <TechStackSection />
       <ContactCTA />
     </Column>
   );

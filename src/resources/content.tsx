@@ -49,7 +49,7 @@ const social: Social = [
   {
     name: "Email",
     icon: "email",
-    link: `${person.email}`,
+    link: `mailto:${person.email}`,
     essential: true,
   },
 ];
