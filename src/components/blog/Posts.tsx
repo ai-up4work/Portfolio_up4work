@@ -1,35 +1,73 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Column, Row, Heading, Text } from '@once-ui-system/core';
+import { Grid } from "@once-ui-system/core";
+import Post from "./Post";
 import { IBlogPost } from '@/lib/models';
 
 interface PostsProps {
-  range?: [number, number?];
-  columns?: string;
+  range?: [number] | [number, number];
+  columns?: "1" | "2" | "3";
   thumbnail?: boolean;
-  direction?: 'row' | 'column';
+  direction?: "row" | "column";
+  exclude?: string[];
+  featured?: boolean;
+  tag?: string;
+  limit?: number;
 }
 
-export function Posts({ range, columns = '1', thumbnail = false, direction = 'row' }: PostsProps) {
+export function Posts({
+  range,
+  columns = "1",
+  thumbnail = false,
+  exclude = [],
+  direction,
+  featured,
+  tag,
+  limit,
+}: PostsProps) {
   const [posts, setPosts] = useState<IBlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchPosts() {
       try {
-        const response = await fetch('/api/blog?featured=true');
+        const params = new URLSearchParams();
+        
+        if (featured) {
+          params.append('featured', 'true');
+        }
+        
+        if (tag) {
+          params.append('tag', tag);
+        }
+        
+        if (limit) {
+          params.append('limit', limit.toString());
+        }
+        
+        const response = await fetch(`/api/blog?${params.toString()}`);
         const result = await response.json();
         
         if (result.success) {
           let filtered = result.data;
           
-          if (range) {
-            const [start, end] = range;
-            filtered = filtered.slice(start - 1, end || start);
+          // Exclude by slug (exact match)
+          if (exclude.length) {
+            filtered = filtered.filter((post: IBlogPost) => !exclude.includes(post.slug));
           }
           
-          setPosts(filtered);
+          // Sort by publication date (already sorted by API, but keeping for consistency)
+          const sorted = filtered.sort((a: IBlogPost, b: IBlogPost) => {
+            return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          });
+          
+          // Apply range filter
+          const displayed = range
+            ? sorted.slice(range[0] - 1, range.length === 2 ? range[1] : sorted.length)
+            : sorted;
+          
+          setPosts(displayed);
         }
       } catch (error) {
         console.error('Failed to fetch posts:', error);
@@ -39,65 +77,44 @@ export function Posts({ range, columns = '1', thumbnail = false, direction = 'ro
     }
 
     fetchPosts();
-  }, [range]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
-    return <div>Loading posts...</div>;
+    return (
+      <Grid columns={columns} s={{ columns: 1 }} fillWidth marginBottom="40" gap="16">
+        <div>Loading posts...</div>
+      </Grid>
+    );
   }
 
   return (
-    <Column fillWidth gap="l">
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gap: 'var(--static-space-24)'
-      }}>
-        {posts.map((post) => (
-          <Column 
-            key={post.slug} 
-            fillWidth 
-            gap="m"
-            style={{
-              flexDirection: direction
-            }}
-          >
-            {thumbnail && post.image && (
-              <img 
-                src={post.image} 
-                alt={post.title} 
-                style={{ 
-                  width: '100%', 
-                  height: '200px',
-                  objectFit: 'cover',
-                  borderRadius: 'var(--radius-m)'
-                }} 
-              />
-            )}
-            <Column flex={1}>
-              <Heading as="h3" variant="heading-strong-l">
-                {post.title}
-              </Heading>
-              <Text variant="body-default-m" onBackground="neutral-weak">
-                {post.description}
-              </Text>
-              {post.tags && (
-                <Row gap="8" marginTop="8">
-                  {post.tags.map((tag) => (
-                    <Text key={tag} variant="label-default-s" onBackground="neutral-medium">
-                      #{tag}
-                    </Text>
-                  ))}
-                </Row>
-              )}
-              {post.metadata?.readTime && (
-                <Text variant="label-default-s" onBackground="neutral-weak" marginTop="4">
-                  {post.metadata.readTime}
-                </Text>
-              )}
-            </Column>
-          </Column>
-        ))}
-      </div>
-    </Column>
+    <>
+      {posts.length > 0 && (
+        <Grid columns={columns} s={{ columns: 1 }} fillWidth marginBottom="40" gap="16">
+          {posts.map((post) => (
+            <Post 
+              key={post.slug} 
+              post={{
+                slug: post.slug,
+                metadata: {
+                  title: post.title,
+                  publishedAt: post.publishedAt,
+                  summary: post.description,
+                  image: post.image && (post.image.startsWith('/') || post.image.startsWith('./'))
+                    ? post.image 
+                    : '/images/placeholder-project-1.jpg',
+                  author: post.author,
+                  tags: post.tags,
+                },
+                content: post.content,
+              }} 
+              thumbnail={thumbnail} 
+              direction={direction} 
+            />
+          ))}
+        </Grid>
+      )}
+    </>
   );
 }

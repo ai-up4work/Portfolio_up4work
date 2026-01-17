@@ -18,16 +18,18 @@ const GalleryImageSchema = new Schema<IGalleryImage>({
 });
 
 // Enhanced Project Model with full content support
+// In your models file
 interface IProject {
   slug: string;
   title: string;
   description: string;
-  image: string;
+  image: string; // Keep for backward compatibility
+  images?: string[]; // Add this for multiple images
   publishedAt: Date;
   featured: boolean;
   order: number;
   tags?: string[];
-  content: string; // MDX/Markdown content
+  content: string;
   metadata?: {
     readTime?: string;
     views?: number;
@@ -45,11 +47,12 @@ const ProjectSchema = new Schema<IProject>({
   title: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String, required: true },
+  images: [{ type: String }], // Add this line
   publishedAt: { type: Date, default: Date.now },
   featured: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
   tags: [{ type: String }],
-  content: { type: String, required: true }, // Full MDX/Markdown content
+  content: { type: String, required: true },
   metadata: {
     readTime: { type: String },
     views: { type: Number, default: 0 },
