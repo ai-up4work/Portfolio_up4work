@@ -23,6 +23,8 @@ interface IProject {
   title: string;
   description: string;
   image: string;
+  createdAt?: Date
+  updatedAt?: Date
   publishedAt: Date;
   featured: boolean;
   order: number;
