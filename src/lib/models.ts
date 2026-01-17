@@ -18,36 +18,13 @@ const GalleryImageSchema = new Schema<IGalleryImage>({
 });
 
 // Enhanced Project Model with full content support
-// interface IProject {
-//   slug: string;
-//   title: string;
-//   description: string;
-//   image: string;
-//   createdAt?: Date
-//   updatedAt?: Date
-//   publishedAt: Date;
-//   featured: boolean;
-//   order: number;
-//   link?: string; 
-//   tags?: string[];
-//   content: string; // MDX/Markdown content
-//   metadata?: {
-//     readTime?: string;
-//     views?: number;
-//     likes?: number;
-//   };
-//   seo?: {
-//     metaTitle?: string;
-//     metaDescription?: string;
-//     ogImage?: string;
-//   };
-// }
-
 interface IProject {
   slug: string;
   title: string;
   description: string;
+
   image: string;
+  images?: string[];
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -71,16 +48,18 @@ interface IProject {
 }
 
 
+
 const ProjectSchema = new Schema<IProject>({
   slug: { type: String, required: true, unique: true, index: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String, required: true },
+  images: [{ type: String }], // Add this line
   publishedAt: { type: Date, default: Date.now },
   featured: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
   tags: [{ type: String }],
-  content: { type: String, required: true }, // Full MDX/Markdown content
+  content: { type: String, required: true },
   metadata: {
     readTime: { type: String },
     views: { type: Number, default: 0 },

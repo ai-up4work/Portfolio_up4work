@@ -10,45 +10,9 @@ interface ProjectsProps {
   exclude?: string[];
 }
 
-// Skeleton loader component
-function ProjectCardSkeleton() {
-  return (
-    <div className="w-full rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
-      {/* Image skeleton */}
-      <div className="w-full h-64 bg-gray-200 dark:bg-gray-800" />
-      
-      {/* Content skeleton */}
-      <div className="p-6 space-y-4">
-        {/* Avatar skeleton */}
-        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800" />
-        
-        {/* Title skeleton */}
-        <div className="space-y-2">
-          <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-          <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-        </div>
-        
-        {/* Description skeleton */}
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-4/6" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Projects({ range, exclude }: ProjectsProps) {
   const [projects, setProjects] = useState<IProject[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Fallback images from your own domain
-  const fallbackImages = [
-    '/images/placeholder-project-1.jpg',
-    '/images/placeholder-project-2.jpg',
-    '/images/placeholder-project-3.jpg'
-  ];
 
   useEffect(() => {
     async function fetchProjects() {
@@ -61,7 +25,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
 
           // Exclude by slug (exact match)
           if (exclude && exclude.length > 0) {
-            filtered = filtered.filter((project: IProject) => 
+            filtered = filtered.filter((project: IProject) =>
               !exclude.includes(project.slug)
             );
           }
@@ -91,19 +55,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
   if (loading) {
     return (
       <Column fillWidth gap="l">
-        <ProjectCardSkeleton />
-        <ProjectCardSkeleton />
-        <ProjectCardSkeleton />
-      </Column>
-    );
-  }
-
-  if (projects.length === 0) {
-    return (
-      <Column fillWidth gap="m" paddingY="l" alignItems="center">
-        <p className="text-gray-500 dark:text-gray-400">
-          No projects found
-        </p>
+        Loading projects...
       </Column>
     );
   }
@@ -114,13 +66,6 @@ export function Projects({ range, exclude }: ProjectsProps) {
         <ProjectCard
           key={project.slug || index}
           href={`/projects/${project.slug}`}
-          images={
-            project.images && project.images.length > 0
-              ? project.images
-              : project.image
-              ? [project.image]
-              : fallbackImages
-          }
           title={project.title}
           description={project.description}
           content={project.content || ''}

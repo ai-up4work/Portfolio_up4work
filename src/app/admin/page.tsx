@@ -1,16 +1,32 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Upload, X, Link as LinkIcon, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ItemData {
+  _id?: string;
   slug: string;
   title: string;
   description: string;
   image?: string;
+  images?: string[];
   content: string;
+  author?: string;
   tags?: string[];
   featured: boolean;
   order: number;
+  publishedAt?: string;
+  link?: string;
+  avatars?: { src: string }[];
+  metadata?: {
+    readTime?: string;
+    tag?: string;
+  };
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    ogImage?: string;
+  };
 }
 
 interface FormData {
@@ -18,31 +34,66 @@ interface FormData {
   title: string;
   description: string;
   image: string;
+  images: string[];
   content: string;
+  author: string;
   tags: string;
   featured: boolean;
   order: number;
+  publishedAt: string;
+  readTime: string;
+  metaTitle: string;
+  metaDescription: string;
+  ogImage: string;
+  link: string;
+  avatars: string;
+  tag: string;
 }
 
-export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'projects' | 'blog'>('projects');
+export default function AdminCMS() {
+  const [activeTab, setActiveTab] = useState<'projects' | 'blogs'>('projects');
   const [items, setItems] = useState<ItemData[]>([]);
   const [formData, setFormData] = useState<FormData>({
     slug: '',
     title: '',
     description: '',
     image: '',
+    images: [],
     content: '',
+    author: '',
     tags: '',
     featured: false,
-    order: 0
+    order: 0,
+    publishedAt: new Date().toISOString().split('T')[0],
+    readTime: '',
+    metaTitle: '',
+    metaDescription: '',
+    ogImage: '',
+    link: '',
+    avatars: '',
+    tag: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
+  const [additionalImagesMode, setAdditionalImagesMode] = useState<'upload' | 'url'>('upload');
+  const [showPreview, setShowPreview] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    basic: true,
+    media: true,
+    content: true,
+    metadata: false,
+    seo: false
+  });
 
   useEffect(() => {
     fetchItems();
   }, [activeTab]);
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const fetchItems = async () => {
     setLoading(true);
@@ -60,14 +111,107 @@ export default function AdminPanel() {
     }
   };
 
+  const uploadToCloudinary = async (file: File, folder: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      return result.url;
+    } else {
+      throw new Error(result.error || 'Upload failed');
+    }
+  };
+
+  const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const folder = activeTab === 'projects' 
+        ? `Up4work-portfolio/Project_Images/${formData.slug || 'temp'}`
+        : `Up4work-portfolio/Blog_Images/${formData.slug || 'temp'}`;
+      
+      const url = await uploadToCloudinary(file, folder);
+      setFormData({ ...formData, image: url });
+      alert('Image uploaded successfully!');
+    } catch (error) {
+      alert('Failed to upload image: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAdditionalImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const folder = `Up4work-portfolio/Project_Images/${formData.slug || 'temp'}`;
+      const uploadPromises = Array.from(files).map(file => uploadToCloudinary(file, folder));
+      const urls = await Promise.all(uploadPromises);
+      
+      setFormData({ 
+        ...formData, 
+        images: [...formData.images, ...urls]
+      });
+      alert(`${urls.length} image(s) uploaded successfully!`);
+    } catch (error) {
+      alert('Failed to upload images: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    const newImages = formData.images.filter((_, i) => i !== index);
+    setFormData({ ...formData, images: newImages });
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
 
     const endpoint = activeTab === 'projects' ? '/api/projects' : '/api/blog';
-    const payload = {
-      ...formData,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+    const payload: any = {
+      slug: formData.slug,
+      title: formData.title,
+      description: formData.description,
+      image: formData.image,
+      content: formData.content,
+      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      featured: formData.featured,
+      order: formData.order,
+      publishedAt: formData.publishedAt,
+      metadata: {
+        readTime: formData.readTime,
+      },
+      seo: {
+        metaTitle: formData.metaTitle,
+        metaDescription: formData.metaDescription,
+        ogImage: formData.ogImage
+      }
     };
+
+    if (activeTab === 'projects') {
+      payload.images = formData.images;
+      payload.link = formData.link;
+      if (formData.avatars) {
+        payload.avatars = formData.avatars.split(',').map(src => ({ src: src.trim() })).filter(a => a.src);
+      }
+    }
+
+    if (activeTab === 'blogs') {
+      payload.author = formData.author;
+      payload.metadata.tag = formData.tag;
+    }
 
     try {
       const response = await fetch(editingId ? `${endpoint}/${editingId}` : endpoint, {
@@ -99,21 +243,32 @@ export default function AdminPanel() {
       title: item.title,
       description: item.description,
       image: item.image || '',
+      images: item.images || [],
       content: item.content,
+      author: item.author || '',
       tags: item.tags?.join(', ') || '',
       featured: item.featured,
-      order: item.order
+      order: item.order,
+      publishedAt: item.publishedAt ? new Date(item.publishedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      readTime: item.metadata?.readTime || '',
+      metaTitle: item.seo?.metaTitle || '',
+      metaDescription: item.seo?.metaDescription || '',
+      ogImage: item.seo?.ogImage || '',
+      link: item.link || '',
+      avatars: item.avatars?.map(a => a.src).join(', ') || '',
+      tag: item.metadata?.tag || ''
     });
-    setEditingId(item.slug);
+    setEditingId(item._id || item.slug);
+    setExpandedSections({ basic: true, media: true, content: true, metadata: true, seo: true });
   };
 
-  const handleDelete = async (slug: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     const endpoint = activeTab === 'projects' ? '/api/projects' : '/api/blog';
     
     try {
-      const response = await fetch(`${endpoint}/${slug}`, {
+      const response = await fetch(`${endpoint}/${id}`, {
         method: 'DELETE'
       });
 
@@ -135,83 +290,115 @@ export default function AdminPanel() {
       title: '',
       description: '',
       image: '',
+      images: [],
       content: '',
+      author: '',
       tags: '',
       featured: false,
-      order: 0
+      order: 0,
+      publishedAt: new Date().toISOString().split('T')[0],
+      readTime: '',
+      metaTitle: '',
+      metaDescription: '',
+      ogImage: '',
+      link: '',
+      avatars: '',
+      tag: ''
     });
     setEditingId(null);
+    setExpandedSections({ basic: true, media: true, content: true, metadata: false, seo: false });
   };
 
+  const SectionHeader = ({ title, section }: { title: string; section: keyof typeof expandedSections }) => (
+    <button
+      type="button"
+      onClick={() => toggleSection(section)}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 0',
+        fontSize: '16px',
+        fontWeight: 600,
+        color: 'var(--neutral-on-background-strong)',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        borderBottom: '1px solid var(--neutral-alpha-weak)',
+        marginBottom: expandedSections[section] ? '16px' : '0'
+      }}
+    >
+      {title}
+      {expandedSections[section] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+    </button>
+  );
+
   return (
-    <div className="min-h-screen" style={{ 
-      color: 'var(--neutral-on-background-strong)'
-    }}>
-      <div style={{ 
-        maxWidth: '80rem',
-        margin: '0 auto',
-        padding: 'var(--static-space-64) var(--static-space-24)'
-      }}>
+    <div className="min-h-screen" style={{ color: 'var(--neutral-on-background-strong)' }}>
+      <div style={{ maxWidth: '100rem', margin: '0 auto', padding: '24px 16px' }}>
         {/* Header */}
-        <div style={{ marginBottom: 'var(--static-space-48)' }}>
+        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
           <h1 style={{
-            fontSize: 'var(--font-size-display-l)',
-            fontWeight: 600,
-            lineHeight: 'var(--font-line-height-display-l)',
-            letterSpacing: 'var(--font-letter-spacing-display-l)',
-            marginBottom: 'var(--static-space-8)'
+            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+            fontWeight: 700,
+            marginBottom: '12px',
+            background: 'linear-gradient(135deg, var(--brand-on-background-strong), var(--accent-on-background-strong))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
           }}>
-            Content Management
+            Content Management System
           </h1>
           <p style={{
-            fontSize: 'var(--font-size-body-l)',
-            lineHeight: 'var(--font-line-height-body-l)',
-            color: 'var(--neutral-on-background-weak)'
+            fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
+            color: 'var(--neutral-on-background-weak)',
+            maxWidth: '48rem',
+            margin: '0 auto'
           }}>
-            Manage your portfolio projects and blog posts
+            Create and manage your portfolio projects and blog posts with ease
           </p>
         </div>
         
         {/* Tabs */}
         <div style={{ 
           display: 'flex',
-          gap: 'var(--static-space-8)',
-          marginBottom: 'var(--static-space-48)',
-          borderBottom: '1px solid var(--neutral-alpha-weak)',
-          paddingBottom: '0'
+          gap: '12px',
+          marginBottom: '32px',
+          justifyContent: 'center',
+          flexWrap: 'wrap'
         }}>
           <button
             type="button"
             onClick={() => { setActiveTab('projects'); resetForm(); }}
             style={{
-              padding: 'var(--static-space-12) var(--static-space-16)',
-              fontSize: 'var(--font-size-label-m)',
-              fontWeight: 500,
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'projects' ? '2px solid var(--brand-on-background-strong)' : '2px solid transparent',
-              color: activeTab === 'projects' ? 'var(--brand-on-background-strong)' : 'var(--neutral-on-background-medium)',
+              padding: '12px 24px',
+              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+              fontWeight: 600,
+              background: activeTab === 'projects' ? 'var(--brand-background-strong)' : 'var(--surface-background)',
+              color: activeTab === 'projects' ? 'white' : 'var(--neutral-on-background-medium)',
+              border: '1px solid var(--neutral-alpha-weak)',
+              borderRadius: '9999px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              marginBottom: '-1px'
+              transition: 'all 0.3s ease',
+              boxShadow: activeTab === 'projects' ? '0 4px 12px var(--brand-alpha-weak)' : 'none'
             }}
           >
             Projects
           </button>
           <button
             type="button"
-            onClick={() => { setActiveTab('blog'); resetForm(); }}
+            onClick={() => { setActiveTab('blogs'); resetForm(); }}
             style={{
-              padding: 'var(--static-space-12) var(--static-space-16)',
-              fontSize: 'var(--font-size-label-m)',
-              fontWeight: 500,
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'blog' ? '2px solid var(--brand-on-background-strong)' : '2px solid transparent',
-              color: activeTab === 'blog' ? 'var(--brand-on-background-strong)' : 'var(--neutral-on-background-medium)',
+              padding: '12px 24px',
+              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+              fontWeight: 600,
+              background: activeTab === 'blogs' ? 'var(--brand-background-strong)' : 'var(--surface-background)',
+              color: activeTab === 'blogs' ? 'white' : 'var(--neutral-on-background-medium)',
+              border: '1px solid var(--neutral-alpha-weak)',
+              borderRadius: '9999px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              marginBottom: '-1px'
+              transition: 'all 0.3s ease',
+              boxShadow: activeTab === 'blogs' ? '0 4px 12px var(--brand-alpha-weak)' : 'none'
             }}
           >
             Blog Posts
@@ -220,487 +407,942 @@ export default function AdminPanel() {
 
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 32rem), 1fr))',
-          gap: 'var(--static-space-32)'
+          gridTemplateColumns: window.innerWidth >= 1024 ? '1fr 1fr' : '1fr',
+          gap: '24px',
+          alignItems: 'start'
         }}>
           {/* Form Section */}
           <div style={{
             background: 'var(--surface-background)',
-            backdropFilter: 'blur(12px)',
             border: '1px solid var(--neutral-alpha-weak)',
-            borderRadius: 'var(--radius-l)',
-            padding: 'var(--static-space-32)'
+            borderRadius: '16px',
+            padding: 'clamp(1.5rem, 3vw, 2.5rem)',
+            boxShadow: '0 8px 32px var(--neutral-alpha-weak)',
+            width: '100%'
           }}>
-            <h2 style={{
-              fontSize: 'var(--font-size-heading-l)',
-              fontWeight: 600,
-              lineHeight: 'var(--font-line-height-heading-l)',
-              marginBottom: 'var(--static-space-24)'
-            }}>
-              {editingId ? 'Edit' : 'Create New'} {activeTab === 'projects' ? 'Project' : 'Post'}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+              <h2 style={{
+                fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
+                fontWeight: 700
+              }}>
+                {editingId ? '✏️ Edit' : '➕ Create'} {activeTab === 'projects' ? 'Project' : 'Post'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  background: 'var(--neutral-alpha-weak)',
+                  color: 'var(--neutral-on-background-medium)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                {showPreview ? 'Hide' : 'Show'} Preview
+              </button>
+            </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--static-space-20)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Basic Info Section */}
               <div>
-                <label htmlFor="slug" style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-label-s)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--static-space-8)',
-                  color: 'var(--neutral-on-background-medium)'
-                }}>
-                  Slug (URL-friendly)
-                </label>
-                <input
-                  id="slug"
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--static-space-12) var(--static-space-16)',
-                    fontSize: 'var(--font-size-body-m)',
-                    background: 'var(--input-background)',
-                    border: '1px solid var(--neutral-alpha-weak)',
-                    borderRadius: 'var(--radius-m)',
-                    color: 'var(--neutral-on-background-strong)',
-                    outline: 'none',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  placeholder="my-awesome-project"
-                  disabled={!!editingId}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                />
+                <SectionHeader title="Basic Information" section="basic" />
+                {expandedSections.basic && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth >= 640 ? '1fr 1fr' : '1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                          Slug *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.slug}
+                          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                          placeholder="url-friendly-slug"
+                          disabled={!!editingId}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                            background: 'var(--input-background)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '8px',
+                            color: 'var(--neutral-on-background-strong)',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                          Order
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.order}
+                          onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                            background: 'var(--input-background)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '8px',
+                            color: 'var(--neutral-on-background-strong)',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                        Title *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="Enter a compelling title"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '1px solid var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-strong)',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                        Description *
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Brief description for cards and previews"
+                        rows={3}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '1px solid var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-strong)',
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                        Tags
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.tags}
+                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                        placeholder="react, nextjs, design (comma-separated)"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '1px solid var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-strong)',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* Media Section */}
               <div>
-                <label htmlFor="title" style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-label-s)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--static-space-8)',
-                  color: 'var(--neutral-on-background-medium)'
-                }}>
-                  Title
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--static-space-12) var(--static-space-16)',
-                    fontSize: 'var(--font-size-body-m)',
-                    background: 'var(--input-background)',
-                    border: '1px solid var(--neutral-alpha-weak)',
-                    borderRadius: 'var(--radius-m)',
-                    color: 'var(--neutral-on-background-strong)',
-                    outline: 'none',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  placeholder="My Awesome Project"
-                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                />
+                <SectionHeader title="Media & Assets" section="media" />
+                {expandedSections.media && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* Main Image */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '8px' }}>
+                        Main Image
+                      </label>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setImageInputMode('upload')}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            background: imageInputMode === 'upload' ? 'var(--brand-alpha-weak)' : 'transparent',
+                            color: imageInputMode === 'upload' ? 'var(--brand-on-background-strong)' : 'var(--neutral-on-background-medium)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Upload size={14} /> Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImageInputMode('url')}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            background: imageInputMode === 'url' ? 'var(--brand-alpha-weak)' : 'transparent',
+                            color: imageInputMode === 'url' ? 'var(--brand-on-background-strong)' : 'var(--neutral-on-background-medium)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <LinkIcon size={14} /> URL
+                        </button>
+                      </div>
+
+                      {imageInputMode === 'upload' ? (
+                        <label style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '24px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '2px dashed var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-medium)',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}>
+                          {uploading ? '⏳ Uploading...' : formData.image ? '✅ Click to change image' : '📤 Click or drag to upload'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleMainImageUpload}
+                            disabled={uploading || !formData.slug}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                      ) : (
+                        <input
+                          type="text"
+                          value={formData.image}
+                          onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                          placeholder="https://example.com/image.jpg"
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                            background: 'var(--input-background)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '8px',
+                            color: 'var(--neutral-on-background-strong)',
+                            outline: 'none'
+                          }}
+                        />
+                      )}
+
+                      {formData.image && (
+                        <div style={{ marginTop: '12px' }}>
+                          <img 
+                            src={formData.image} 
+                            alt="Preview" 
+                            style={{ 
+                              width: '100%', 
+                              height: 'clamp(150px, 20vw, 200px)', 
+                              objectFit: 'cover', 
+                              borderRadius: '8px',
+                              border: '1px solid var(--neutral-alpha-weak)'
+                            }} 
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Additional Images for Projects */}
+                    {activeTab === 'projects' && (
+                      <>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '8px' }}>
+                            Gallery Images
+                          </label>
+                          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => setAdditionalImagesMode('upload')}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                background: additionalImagesMode === 'upload' ? 'var(--brand-alpha-weak)' : 'transparent',
+                                color: additionalImagesMode === 'upload' ? 'var(--brand-on-background-strong)' : 'var(--neutral-on-background-medium)',
+                                border: '1px solid var(--neutral-alpha-weak)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <Upload size={14} /> Upload
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAdditionalImagesMode('url')}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                background: additionalImagesMode === 'url' ? 'var(--brand-alpha-weak)' : 'transparent',
+                                color: additionalImagesMode === 'url' ? 'var(--brand-on-background-strong)' : 'var(--neutral-on-background-medium)',
+                                border: '1px solid var(--neutral-alpha-weak)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <LinkIcon size={14} /> URL
+                            </button>
+                          </div>
+
+                          {additionalImagesMode === 'upload' ? (
+                            <label style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '24px',
+                              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                              background: 'var(--input-background)',
+                              border: '2px dashed var(--neutral-alpha-weak)',
+                              borderRadius: '8px',
+                              color: 'var(--neutral-on-background-medium)',
+                              textAlign: 'center',
+                              cursor: 'pointer'
+                            }}>
+                              {uploading ? '⏳ Uploading...' : '🖼️ Upload gallery images (multiple)'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleAdditionalImagesUpload}
+                                disabled={uploading || !formData.slug}
+                                style={{ display: 'none' }}
+                              />
+                            </label>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder="https://img1.jpg, https://img2.jpg"
+                              onBlur={(e) => {
+                                const urls = e.target.value.split(',').map(u => u.trim()).filter(Boolean);
+                                setFormData({ ...formData, images: [...formData.images, ...urls] });
+                                e.target.value = '';
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                                background: 'var(--input-background)',
+                                border: '1px solid var(--neutral-alpha-weak)',
+                                borderRadius: '8px',
+                                color: 'var(--neutral-on-background-strong)',
+                                outline: 'none'
+                              }}
+                            />
+                          )}
+
+                          {formData.images.length > 0 && (
+                            <div style={{ 
+                              display: 'grid', 
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', 
+                              gap: '12px', 
+                              marginTop: '12px' 
+                            }}>
+                              {formData.images.map((img, index) => (
+                                <div key={index} style={{ position: 'relative' }}>
+                                  <img 
+                                    src={img} 
+                                    alt={`Gallery ${index + 1}`} 
+                                    style={{ 
+                                      width: '100%', 
+                                      height: 'clamp(80px, 10vw, 100px)', 
+                                      objectFit: 'cover', 
+                                      borderRadius: '6px',
+                                      border: '1px solid var(--neutral-alpha-weak)'
+                                    }} 
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAdditionalImage(index)}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '4px',
+                                      right: '4px',
+                                      background: 'var(--accent-background-strong)',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '24px',
+                                      height: '24px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      padding: 0,
+                                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                    }}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                            Project Link
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.link}
+                            onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                            placeholder="https://project-demo.com"
+                            style={{
+                              width: '100%',
+                              padding: '12px 16px',
+                              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                              background: 'var(--input-background)',
+                              border: '1px solid var(--neutral-alpha-weak)',
+                              borderRadius: '8px',
+                              color: 'var(--neutral-on-background-strong)',
+                              outline: 'none'
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                            Team Avatars (URLs, comma-separated)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.avatars}
+                            onChange={(e) => setFormData({ ...formData, avatars: e.target.value })}
+                            placeholder="https://avatar1.jpg, https://avatar2.jpg"
+                            style={{
+                              width: '100%',
+                              padding: '12px 16px',
+                              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                              background: 'var(--input-background)',
+                              border: '1px solid var(--neutral-alpha-weak)',
+                              borderRadius: '8px',
+                              color: 'var(--neutral-on-background-strong)',
+                              outline: 'none'
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'blogs' && (
+                      <>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                            Author Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.author}
+                            onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                            placeholder="John Doe"
+                            style={{
+                              width: '100%',
+                              padding: '12px 16px',
+                              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                              background: 'var(--input-background)',
+                              border: '1px solid var(--neutral-alpha-weak)',
+                              borderRadius: '8px',
+                              color: 'var(--neutral-on-background-strong)',
+                              outline: 'none'
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                            Category Tag
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.tag}
+                            onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+                            placeholder="Tutorial"
+                            style={{
+                              width: '100%',
+                              padding: '12px 16px',
+                              fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                              background: 'var(--input-background)',
+                              border: '1px solid var(--neutral-alpha-weak)',
+                              borderRadius: '8px',
+                              color: 'var(--neutral-on-background-strong)',
+                              outline: 'none'
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
+              {/* Content Section */}
               <div>
-                <label htmlFor="description" style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-label-s)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--static-space-8)',
-                  color: 'var(--neutral-on-background-medium)'
-                }}>
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--static-space-12) var(--static-space-16)',
-                    fontSize: 'var(--font-size-body-m)',
-                    background: 'var(--input-background)',
-                    border: '1px solid var(--neutral-alpha-weak)',
-                    borderRadius: 'var(--radius-m)',
-                    color: 'var(--neutral-on-background-strong)',
-                    outline: 'none',
-                    resize: 'vertical',
-                    minHeight: '5rem',
-                    fontFamily: 'var(--font-body)',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  rows={3}
-                  placeholder="A brief description..."
-                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                />
+                <SectionHeader title="Content" section="content" />
+                {expandedSections.content && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                      Main Content (Markdown) *
+                    </label>
+                    <textarea
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      placeholder="Write your content in Markdown format..."
+                      rows={12}
+                      style={{
+                        width: '100%',
+                        padding: '16px',
+                        fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                        background: 'var(--input-background)',
+                        border: '1px solid var(--neutral-alpha-weak)',
+                        borderRadius: '8px',
+                        color: 'var(--neutral-on-background-strong)',
+                        outline: 'none',
+                        resize: 'vertical',
+                        fontFamily: 'monospace',
+                        lineHeight: '1.6'
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
+              {/* Metadata Section */}
               <div>
-                <label htmlFor="image" style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-label-s)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--static-space-8)',
-                  color: 'var(--neutral-on-background-medium)'
-                }}>
-                  Image URL
-                </label>
-                <input
-                  id="image"
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--static-space-12) var(--static-space-16)',
-                    fontSize: 'var(--font-size-body-m)',
-                    background: 'var(--input-background)',
-                    border: '1px solid var(--neutral-alpha-weak)',
-                    borderRadius: 'var(--radius-m)',
-                    color: 'var(--neutral-on-background-strong)',
-                    outline: 'none',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  placeholder="/images/project.jpg"
-                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                />
+                <SectionHeader title="Metadata & Publishing" section="metadata" />
+                {expandedSections.metadata && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth >= 640 ? '1fr 1fr' : '1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                          Published Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.publishedAt}
+                          onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                            background: 'var(--input-background)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '8px',
+                            color: 'var(--neutral-on-background-strong)',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                          Read Time
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.readTime}
+                          onChange={(e) => setFormData({ ...formData, readTime: e.target.value })}
+                          placeholder="5 min read"
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                            background: 'var(--input-background)',
+                            border: '1px solid var(--neutral-alpha-weak)',
+                            borderRadius: '8px',
+                            color: 'var(--neutral-on-background-strong)',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--neutral-alpha-weak)',
+                      borderRadius: '8px'
+                    }}>
+                      <input
+                        type="checkbox"
+                        id="featured"
+                        checked={formData.featured}
+                        onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          cursor: 'pointer',
+                          accentColor: 'var(--brand-background-strong)'
+                        }}
+                      />
+                      <label htmlFor="featured" style={{
+                        fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                        color: 'var(--neutral-on-background-strong)',
+                        cursor: 'pointer',
+                        fontWeight: 500
+                      }}>
+                        ⭐ Mark as Featured
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* SEO Section */}
               <div>
-                <label htmlFor="tags" style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-label-s)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--static-space-8)',
-                  color: 'var(--neutral-on-background-medium)'
-                }}>
-                  Tags (comma-separated)
-                </label>
-                <input
-                  id="tags"
-                  type="text"
-                  value={formData.tags}
-                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--static-space-12) var(--static-space-16)',
-                    fontSize: 'var(--font-size-body-m)',
-                    background: 'var(--input-background)',
-                    border: '1px solid var(--neutral-alpha-weak)',
-                    borderRadius: 'var(--radius-m)',
-                    color: 'var(--neutral-on-background-strong)',
-                    outline: 'none',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  placeholder="react, nextjs, design"
-                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                />
+                <SectionHeader title="SEO & Social" section="seo" />
+                {expandedSections.seo && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                        Meta Title
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.metaTitle}
+                        onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                        placeholder="SEO optimized title (60 chars)"
+                        maxLength={60}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '1px solid var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-strong)',
+                          outline: 'none'
+                        }}
+                      />
+                      <div style={{ fontSize: '12px', color: 'var(--neutral-on-background-weak)', marginTop: '4px' }}>
+                        {formData.metaTitle.length}/60 characters
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                        Meta Description
+                      </label>
+                      <textarea
+                        value={formData.metaDescription}
+                        onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                        placeholder="Brief description for search engines (160 chars)"
+                        maxLength={160}
+                        rows={3}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '1px solid var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-strong)',
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                      <div style={{ fontSize: '12px', color: 'var(--neutral-on-background-weak)', marginTop: '4px' }}>
+                        {formData.metaDescription.length}/160 characters
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
+                        OG Image URL
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.ogImage}
+                        onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
+                        placeholder="https://example.com/og-image.jpg"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                          background: 'var(--input-background)',
+                          border: '1px solid var(--neutral-alpha-weak)',
+                          borderRadius: '8px',
+                          color: 'var(--neutral-on-background-strong)',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label htmlFor="content" style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-label-s)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--static-space-8)',
-                  color: 'var(--neutral-on-background-medium)'
-                }}>
-                  Content (Markdown)
-                </label>
-                <textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--static-space-12) var(--static-space-16)',
-                    fontSize: 'var(--font-size-body-s)',
-                    background: 'var(--input-background)',
-                    border: '1px solid var(--neutral-alpha-weak)',
-                    borderRadius: 'var(--radius-m)',
-                    color: 'var(--neutral-on-background-strong)',
-                    outline: 'none',
-                    resize: 'vertical',
-                    minHeight: '12rem',
-                    fontFamily: 'var(--font-code)',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  rows={10}
-                  placeholder="# Heading&#10;&#10;Your markdown content here..."
-                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: 'var(--static-space-16)', alignItems: 'end' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--static-space-8)' }}>
-                  <input
-                    type="checkbox"
-                    id="featured"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                    style={{
-                      width: '1.125rem',
-                      height: '1.125rem',
-                      cursor: 'pointer',
-                      accentColor: 'var(--brand-background-strong)'
-                    }}
-                  />
-                  <label htmlFor="featured" style={{
-                    fontSize: 'var(--font-size-label-s)',
-                    color: 'var(--neutral-on-background-medium)',
-                    cursor: 'pointer'
-                  }}>
-                    Featured
-                  </label>
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <label htmlFor="order" style={{
-                    display: 'block',
-                    fontSize: 'var(--font-size-label-s)',
-                    fontWeight: 500,
-                    marginBottom: 'var(--static-space-8)',
-                    color: 'var(--neutral-on-background-medium)'
-                  }}>
-                    Order
-                  </label>
-                  <input
-                    id="order"
-                    type="number"
-                    value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-                    style={{
-                      width: '100%',
-                      padding: 'var(--static-space-12) var(--static-space-16)',
-                      fontSize: 'var(--font-size-body-m)',
-                      background: 'var(--input-background)',
-                      border: '1px solid var(--neutral-alpha-weak)',
-                      borderRadius: 'var(--radius-m)',
-                      color: 'var(--neutral-on-background-strong)',
-                      outline: 'none',
-                      transition: 'border-color 0.2s ease'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--brand-alpha-medium)'}
-                    onBlur={(e) => e.target.style.borderColor = 'var(--neutral-alpha-weak)'}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 'var(--static-space-12)', marginTop: 'var(--static-space-8)' }}>
+              {/* Action Buttons */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '16px', 
+                marginTop: '24px',
+                paddingTop: '24px',
+                borderTop: '1px solid var(--neutral-alpha-weak)',
+                flexWrap: 'wrap'
+              }}>
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading}
                   style={{
-                    flex: 1,
-                    padding: 'var(--static-space-12) var(--static-space-24)',
-                    fontSize: 'var(--font-size-label-m)',
-                    fontWeight: 500,
-                    background: loading ? 'var(--neutral-alpha-weak)' : 'var(--brand-background-strong)',
-                    color: 'var(--brand-on-background-strong)',
+                    flex: '1',
+                    minWidth: '150px',
+                    padding: '16px 32px',
+                    fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                    fontWeight: 600,
+                    background: loading ? 'var(--neutral-alpha-weak)' : 'linear-gradient(135deg, var(--brand-background-strong), var(--accent-background-strong))',
+                    color: 'white',
                     border: 'none',
-                    borderRadius: 'var(--radius-m)',
+                    borderRadius: '8px',
                     cursor: loading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
-                    opacity: loading ? 0.6 : 1
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!loading) e.currentTarget.style.opacity = '0.9';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!loading) e.currentTarget.style.opacity = '1';
+                    opacity: loading ? 0.6 : 1,
+                    transition: 'all 0.3s ease',
+                    boxShadow: loading ? 'none' : '0 4px 16px var(--brand-alpha-weak)'
                   }}
                 >
-                  {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
+                  {loading ? '⏳ Saving...' : editingId ? '✅ Update' : '🚀 Create'}
                 </button>
                 {editingId && (
                   <button
                     type="button"
                     onClick={resetForm}
                     style={{
-                      padding: 'var(--static-space-12) var(--static-space-24)',
-                      fontSize: 'var(--font-size-label-m)',
-                      fontWeight: 500,
+                      padding: '16px 32px',
+                      fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                      fontWeight: 600,
                       background: 'transparent',
                       color: 'var(--neutral-on-background-medium)',
-                      border: '1px solid var(--neutral-alpha-weak)',
-                      borderRadius: 'var(--radius-m)',
+                      border: '2px solid var(--neutral-alpha-weak)',
+                      borderRadius: '8px',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease'
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--neutral-alpha-weak)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
                   >
-                    Cancel
+                    ✖️ Cancel
                   </button>
                 )}
               </div>
             </div>
           </div>
 
-          {/* List Section */}
+          {/* Items List Section */}
           <div style={{
             background: 'var(--surface-background)',
-            backdropFilter: 'blur(12px)',
             border: '1px solid var(--neutral-alpha-weak)',
-            borderRadius: 'var(--radius-l)',
-            padding: 'var(--static-space-32)'
+            borderRadius: '16px',
+            padding: 'clamp(1.5rem, 3vw, 2rem)',
+            boxShadow: '0 8px 32px var(--neutral-alpha-weak)',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%'
           }}>
             <h2 style={{
-              fontSize: 'var(--font-size-heading-l)',
-              fontWeight: 600,
-              lineHeight: 'var(--font-line-height-heading-l)',
-              marginBottom: 'var(--static-space-24)'
+              fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
+              fontWeight: 700,
+              marginBottom: '24px'
             }}>
-              Existing {activeTab === 'projects' ? 'Projects' : 'Posts'}
+              📚 {activeTab === 'projects' ? 'Projects' : 'Blog Posts'}
             </h2>
             
             {loading ? (
-              <p style={{
-                fontSize: 'var(--font-size-body-m)',
-                color: 'var(--neutral-on-background-weak)'
-              }}>
-                Loading...
-              </p>
+              <div style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--neutral-on-background-weak)' }}>
+                ⏳ Loading...
+              </div>
             ) : items.length === 0 ? (
-              <p style={{
-                fontSize: 'var(--font-size-body-m)',
-                color: 'var(--neutral-on-background-weak)'
-              }}>
-                No items yet. Create your first one!
-              </p>
+              <div style={{ textAlign: 'center', padding: '48px 16px' }}>
+                <div style={{ fontSize: 'clamp(3rem, 8vw, 4rem)', marginBottom: '16px' }}>📝</div>
+                <p style={{
+                  fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+                  color: 'var(--neutral-on-background-weak)'
+                }}>
+                  No items yet. Create your first one!
+                </p>
+              </div>
             ) : (
               <div style={{ 
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 'var(--static-space-16)',
-                maxHeight: '40rem',
-                overflowY: 'auto'
+                gap: '16px',
+                overflowY: 'auto',
+                paddingRight: '8px'
               }}>
                 {items.map((item) => (
                   <div 
                     key={item.slug} 
                     style={{
                       border: '1px solid var(--neutral-alpha-weak)',
-                      borderRadius: 'var(--radius-m)',
-                      padding: 'var(--static-space-20)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--neutral-alpha-medium)';
-                      e.currentTarget.style.background = 'var(--neutral-alpha-weak)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--neutral-alpha-weak)';
-                      e.currentTarget.style.background = 'transparent';
+                      borderRadius: '12px',
+                      padding: 'clamp(1rem, 2vw, 1.25rem)',
+                      transition: 'all 0.2s ease',
+                      background: 'var(--input-background)'
                     }}
                   >
+                    {item.image && (
+                      <img 
+                        src={item.image} 
+                        alt={item.title}
+                        style={{
+                          width: '100%',
+                          height: 'clamp(100px, 15vw, 120px)',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          marginBottom: '12px',
+                          border: '1px solid var(--neutral-alpha-weak)'
+                        }}
+                      />
+                    )}
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between', 
                       alignItems: 'start',
-                      marginBottom: 'var(--static-space-8)'
+                      marginBottom: '8px',
+                      gap: '8px'
                     }}>
                       <h3 style={{
-                        fontSize: 'var(--font-size-heading-s)',
+                        fontSize: 'clamp(1rem, 2vw, 1.125rem)',
                         fontWeight: 600,
-                        lineHeight: 'var(--font-line-height-heading-s)'
+                        flex: 1
                       }}>
                         {item.title}
                       </h3>
                       {item.featured && (
                         <span style={{
-                          padding: 'var(--static-space-4) var(--static-space-8)',
-                          fontSize: 'var(--font-size-label-xs)',
-                          background: 'var(--accent-alpha-weak)',
+                          padding: '4px 12px',
+                          fontSize: 'clamp(0.625rem, 1.5vw, 0.75rem)',
+                          background: 'linear-gradient(135deg, var(--accent-alpha-weak), var(--brand-alpha-weak))',
                           color: 'var(--accent-on-background-strong)',
-                          borderRadius: 'var(--radius-s)',
-                          fontWeight: 500
+                          borderRadius: '9999px',
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap'
                         }}>
-                          Featured
+                          ⭐ Featured
                         </span>
                       )}
                     </div>
                     <p style={{
-                      fontSize: 'var(--font-size-body-s)',
-                      lineHeight: 'var(--font-line-height-body-s)',
+                      fontSize: 'clamp(0.875rem, 1.5vw, 0.875rem)',
                       color: 'var(--neutral-on-background-weak)',
-                      marginBottom: 'var(--static-space-12)'
+                      marginBottom: '12px'
                     }}>
-                      {item.description}
+                      {item.description.length > 120 ? item.description.substring(0, 120) + '...' : item.description}
                     </p>
                     {item.tags && item.tags.length > 0 && (
                       <div style={{ 
                         display: 'flex',
-                        gap: 'var(--static-space-8)',
+                        gap: '6px',
                         flexWrap: 'wrap',
-                        marginBottom: 'var(--static-space-12)'
+                        marginBottom: '12px'
                       }}>
-                        {item.tags.map((tag) => (
+                        {item.tags.slice(0, 3).map((tag) => (
                           <span 
                             key={tag}
                             style={{
-                              padding: 'var(--static-space-4) var(--static-space-8)',
-                              fontSize: 'var(--font-size-label-xs)',
+                              padding: '4px 10px',
+                              fontSize: 'clamp(0.625rem, 1.5vw, 0.75rem)',
                               background: 'var(--neutral-alpha-weak)',
                               color: 'var(--neutral-on-background-medium)',
-                              borderRadius: 'var(--radius-s)'
+                              borderRadius: '4px',
+                              fontWeight: 500
                             }}
                           >
                             #{tag}
                           </span>
                         ))}
+                        {item.tags.length > 3 && (
+                          <span style={{
+                            padding: '4px 10px',
+                            fontSize: 'clamp(0.625rem, 1.5vw, 0.75rem)',
+                            color: 'var(--neutral-on-background-weak)'
+                          }}>
+                            +{item.tags.length - 3}
+                          </span>
+                        )}
                       </div>
                     )}
-                    <div style={{ display: 'flex', gap: 'var(--static-space-16)' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '12px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--neutral-alpha-weak)',
+                      flexWrap: 'wrap'
+                    }}>
                       <button
                         type="button"
                         onClick={() => handleEdit(item)}
                         style={{
-                          padding: 0,
-                          fontSize: 'var(--font-size-label-s)',
-                          fontWeight: 500,
-                          background: 'transparent',
-                          border: 'none',
+                          padding: '8px 16px',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)',
+                          fontWeight: 600,
+                          background: 'var(--brand-alpha-weak)',
+                          border: '1px solid var(--brand-alpha-weak)',
+                          borderRadius: '6px',
                           color: 'var(--brand-on-background-strong)',
                           cursor: 'pointer',
-                          transition: 'opacity 0.2s ease'
+                          transition: 'all 0.2s ease'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
-                        Edit
+                        ✏️ Edit
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(item.slug)}
+                        onClick={() => handleDelete(item._id || item.slug)}
                         style={{
-                          padding: 0,
-                          fontSize: 'var(--font-size-label-s)',
-                          fontWeight: 500,
+                          padding: '8px 16px',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)',
+                          fontWeight: 600,
                           background: 'transparent',
-                          border: 'none',
+                          border: '1px solid var(--accent-alpha-weak)',
+                          borderRadius: '6px',
                           color: 'var(--accent-on-background-strong)',
                           cursor: 'pointer',
-                          transition: 'opacity 0.2s ease'
+                          transition: 'all 0.2s ease'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
-                        Delete
+                        🗑️ Delete
                       </button>
                     </div>
                   </div>
