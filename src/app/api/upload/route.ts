@@ -1,22 +1,17 @@
-// app/api/upload/route.ts
-// Make sure this file is in: app/api/upload/route.ts
-
+// src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary - this runs on every request
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Disable Next.js body parsing for file uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// App Router configuration - replaces the old config export
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,9 +109,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Optional: DELETE endpoint to remove images from Cloudinary
+// DELETE endpoint to remove images from Cloudinary
 export async function DELETE(request: NextRequest) {
   try {
+    // Check if Cloudinary is configured
+    if (!process.env.CLOUDINARY_CLOUD_NAME || 
+        !process.env.CLOUDINARY_API_KEY || 
+        !process.env.CLOUDINARY_API_SECRET) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Cloudinary credentials not configured' 
+        },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const publicId = searchParams.get('publicId');
 
@@ -127,13 +135,23 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    console.log('Deleting image:', publicId);
+
     const result = await cloudinary.uploader.destroy(publicId);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Image deleted successfully',
-      result
-    });
+    if (result.result === 'ok') {
+      return NextResponse.json({
+        success: true,
+        message: 'Image deleted successfully',
+        result
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
+        message: 'Image not found or already deleted',
+        result
+      });
+    }
 
   } catch (error: any) {
     console.error('Delete error:', error);

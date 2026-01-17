@@ -1,3 +1,4 @@
+// src/app/api/projects/route.ts
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Project } from '@/lib/models';
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
       query = query.limit(parseInt(limit));
     }
     
-    const projects = await query;
+    const projects = await query.lean();
     return NextResponse.json({ success: true, data: projects });
   } catch (error) {
     console.error('Projects API Error:', error);
@@ -37,10 +38,33 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
+    
+    // Check if slug already exists
+    const existing = await Project.findOne({ slug: body.slug });
+    if (existing) {
+      return NextResponse.json(
+        { success: false, error: 'A project with this slug already exists' },
+        { status: 400 }
+      );
+    }
+    
     const project = await Project.create(body);
     return NextResponse.json({ success: true, data: project }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Projects API Error:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Validation failed',
+          details: error.errors 
+        },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Failed to create project' },
       { status: 500 }

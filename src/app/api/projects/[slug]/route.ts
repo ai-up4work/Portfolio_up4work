@@ -2,6 +2,39 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Project } from '@/lib/models';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Helper function to delete images from Cloudinary
+async function deleteProjectImages(images?: string[]) {
+  if (!images || images.length === 0) return;
+  
+  try {
+    const deletePromises = images.map(async (imageUrl) => {
+      try {
+        // Extract public_id from Cloudinary URL
+        const matches = imageUrl.match(/\/v\d+\/(.+)\.\w+$/);
+        if (matches && matches[1]) {
+          const publicId = matches[1];
+          await cloudinary.uploader.destroy(publicId);
+          console.log(`Deleted image: ${publicId}`);
+        }
+      } catch (err) {
+        console.error(`Failed to delete image ${imageUrl}:`, err);
+      }
+    });
+    
+    await Promise.allSettled(deletePromises);
+  } catch (error) {
+    console.error('Error deleting project images:', error);
+  }
+}
 
 // GET - Fetch a single project
 export async function GET(
@@ -58,7 +91,7 @@ export async function PUT(
   try {
     const { slug: encodedSlug } = await params;
     // Decode URL-encoded slug
-    const slug = decodeURIComponent(encodedSlug);
+    const identifier = decodeURIComponent(encodedSlug);
     
     await connectDB();
     const body = await request.json();
@@ -75,10 +108,25 @@ export async function PUT(
     // Prevent updating certain fields
     const { _id, createdAt, ...updateData } = body;
     
+    // Find existing project by _id or slug
+    let existingProject;
+    if (/^[0-9a-fA-F]{24}$/.test(identifier)) {
+      existingProject = await Project.findById(identifier);
+    } else {
+      existingProject = await Project.findOne({ slug: identifier });
+    }
+    
+    if (!existingProject) {
+      return NextResponse.json(
+        { success: false, error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+    
     // If slug is being changed, check for uniqueness
-    if (updateData.slug && updateData.slug !== slug) {
-      const existing = await Project.findOne({ slug: updateData.slug });
-      if (existing) {
+    if (updateData.slug && updateData.slug !== existingProject.slug) {
+      const slugExists = await Project.findOne({ slug: updateData.slug });
+      if (slugExists) {
         return NextResponse.json(
           { success: false, error: 'Slug already exists' },
           { status: 400 }
@@ -86,18 +134,35 @@ export async function PUT(
       }
     }
     
-    const project = await Project.findOneAndUpdate(
-      { slug },
-      { 
-        ...updateData,
-        updatedAt: new Date() // Explicitly set updatedAt
-      },
-      { 
-        new: true, // Return updated document
-        runValidators: true, // Run schema validators
-        lean: true // Return plain object
-      }
-    );
+    // Perform update
+    let project;
+    if (/^[0-9a-fA-F]{24}$/.test(identifier)) {
+      project = await Project.findByIdAndUpdate(
+        identifier,
+        { 
+          ...updateData,
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true,
+          lean: true
+        }
+      );
+    } else {
+      project = await Project.findOneAndUpdate(
+        { slug: identifier },
+        { 
+          ...updateData,
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true,
+          lean: true
+        }
+      );
+    }
     
     if (!project) {
       return NextResponse.json(
@@ -219,7 +284,7 @@ export async function DELETE(
   try {
     const { slug: encodedSlug } = await params;
     // Decode URL-encoded slug
-    const slug = decodeURIComponent(encodedSlug);
+    const identifier = decodeURIComponent(encodedSlug);
     
     await connectDB();
     
@@ -232,7 +297,18 @@ export async function DELETE(
     //   );
     // }
     
-    const project = await Project.findOneAndDelete({ slug });
+    // Try to find by _id first, then by slug
+    let project;
+    
+    // Check if identifier is a valid MongoDB ObjectId (24 hex characters)
+    if (/^[0-9a-fA-F]{24}$/.test(identifier)) {
+      project = await Project.findByIdAndDelete(identifier);
+    }
+    
+    // If not found by _id, try by slug
+    if (!project) {
+      project = await Project.findOneAndDelete({ slug: identifier });
+    }
     
     if (!project) {
       return NextResponse.json(
@@ -241,8 +317,19 @@ export async function DELETE(
       );
     }
     
-    // Optional: Clean up associated resources (images, etc.)
-    // await deleteProjectImages(project.images);
+    // Clean up associated resources (images, etc.)
+    // Combine main image and gallery images
+    const allImages = [
+      ...(project.image ? [project.image] : []),
+      ...(project.images || [])
+    ];
+    
+    if (allImages.length > 0) {
+      // Fire and forget - don't block the response
+      deleteProjectImages(allImages).catch(err => 
+        console.error('Failed to delete project images:', err)
+      );
+    }
     
     return NextResponse.json({ 
       success: true, 
