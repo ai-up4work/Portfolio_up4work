@@ -18,19 +18,46 @@ const GalleryImageSchema = new Schema<IGalleryImage>({
 });
 
 // Enhanced Project Model with full content support
+// interface IProject {
+//   slug: string;
+//   title: string;
+//   description: string;
+//   image: string;
+//   createdAt?: Date
+//   updatedAt?: Date
+//   publishedAt: Date;
+//   featured: boolean;
+//   order: number;
+//   link?: string; 
+//   tags?: string[];
+//   content: string; // MDX/Markdown content
+//   metadata?: {
+//     readTime?: string;
+//     views?: number;
+//     likes?: number;
+//   };
+//   seo?: {
+//     metaTitle?: string;
+//     metaDescription?: string;
+//     ogImage?: string;
+//   };
+// }
+
 interface IProject {
   slug: string;
   title: string;
   description: string;
   image: string;
-  createdAt?: Date
-  updatedAt?: Date
+
+  createdAt?: Date;
+  updatedAt?: Date;
+
   publishedAt: Date;
   featured: boolean;
   order: number;
-  link?: string; 
+  link?: string;
   tags?: string[];
-  content: string; // MDX/Markdown content
+  content: string;
   metadata?: {
     readTime?: string;
     views?: number;
@@ -42,6 +69,7 @@ interface IProject {
     ogImage?: string;
   };
 }
+
 
 const ProjectSchema = new Schema<IProject>({
   slug: { type: String, required: true, unique: true, index: true },
