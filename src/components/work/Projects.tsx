@@ -100,7 +100,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
 
   if (projects.length === 0) {
     return (
-      <Column fillWidth gap="m" paddingY="l" alignItems="center">
+      <Column fillWidth gap="m" paddingY="l" horizontal="center">  
         <p className="text-gray-500 dark:text-gray-400">
           No projects found
         </p>
