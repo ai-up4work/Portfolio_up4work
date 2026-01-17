@@ -22,6 +22,7 @@ interface IProject {
   slug: string;
   title: string;
   description: string;
+  author?: string;
 
   image: string;
   images?: string[];
