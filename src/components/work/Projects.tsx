@@ -221,15 +221,17 @@ export function Projects({ range, exclude }: ProjectsProps) {
   return (
     <Column fillWidth gap="l">
       {projects.map((project, index) => {
-        const projectImages =
-          project.images?.length
+        // Determine images to display
+        const projectImages = 
+          project.images && project.images.length > 0
             ? project.images
             : project.image
             ? [project.image]
             : fallbackImages;
 
-        const projectAvatars =
-          project.avatars?.length
+        // Determine avatars - use project avatars or fallback
+        const projectAvatars = 
+          project.avatars && project.avatars.length > 0
             ? project.avatars
             : [{ src: '/images/logo.png' }];
 
@@ -238,7 +240,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
             key={project.slug || `project-${index}`}
             href={`/projects/${project.slug}`}
             images={projectImages}
-            priority={index === 0}
+            priority={index === 0} // Priority loading for first image
             title={project.title}
             description={project.description}
             content={project.content || ''}
