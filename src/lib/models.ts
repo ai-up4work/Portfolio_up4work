@@ -28,6 +28,7 @@ interface IProject {
   publishedAt: Date;
   featured: boolean;
   order: number;
+  link?: string; 
   tags?: string[];
   content: string;
   metadata?: {

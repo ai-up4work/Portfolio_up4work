@@ -22,16 +22,16 @@ const social: Social = [
   // Links are automatically displayed.
   // Import new icons in /once-ui/icons.ts
   // Set essentials: true for links you want to show on the about page
-  {
-    name: "GitHub",
-    icon: "github",
-    link: "https://github.com/ai-up4work",
-    essential: true,
-  },
+  // {
+  //   name: "GitHub",
+  //   icon: "github",
+  //   link: "https://github.com/awork",
+  //   essential: true,
+  // },
   {
     name: "LinkedIn",
     icon: "linkedin",
-    link: "https://www.linkedin.com/company/once-ui/",
+    link: "https://www.linkedin.com/company/onaaaa/",
     essential: true,
   },
   {
@@ -40,12 +40,12 @@ const social: Social = [
     link: "https://www.instagram.com/up4work.io?igsh=c2l2czFkZWg3NnI4&utm_source=qr",
     essential: false,
   },
-  {
-    name: "Threads",
-    icon: "threads",
-    link: "https://www.threads.com/@once_ui",
-    essential: true,
-  },
+  // {
+  //   name: "Threads",
+  //   icon: "threads",
+  //   link: "https://www.threads.com/@once_ui",
+  //   essential: true,
+  // },
   {
     name: "Email",
     icon: "email",
