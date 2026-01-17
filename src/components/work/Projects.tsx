@@ -114,12 +114,20 @@ export function Projects({ range, exclude }: ProjectsProps) {
         <ProjectCard
           key={project.slug || index}
           href={`/projects/${project.slug}`}
+          images={
+            project.images && project.images.length > 0
+              ? project.images
+              : project.image
+              ? [project.image]
+              : fallbackImages
+          }
           title={project.title}
           description={project.description}
           content={project.content || ''}
           avatars={[{ src: '/images/logo.png' }]}
           link={project.link || ''}
         />
+
 
 
       ))}
