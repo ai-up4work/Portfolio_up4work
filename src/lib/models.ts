@@ -18,17 +18,21 @@ const GalleryImageSchema = new Schema<IGalleryImage>({
 });
 
 // Enhanced Project Model with full content support
-// In your models file
 interface IProject {
   slug: string;
   title: string;
   description: string;
-  image: string; // Keep for backward compatibility
-  images?: string[]; // Add this for multiple images
+
+  image: string;
+  images?: string[];
+
+  createdAt?: Date;
+  updatedAt?: Date;
+
   publishedAt: Date;
   featured: boolean;
   order: number;
-  link?: string; 
+  link?: string;
   tags?: string[];
   content: string;
   metadata?: {
@@ -42,6 +46,8 @@ interface IProject {
     ogImage?: string;
   };
 }
+
+
 
 const ProjectSchema = new Schema<IProject>({
   slug: { type: String, required: true, unique: true, index: true },
