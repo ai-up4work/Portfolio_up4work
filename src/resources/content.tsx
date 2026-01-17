@@ -77,7 +77,7 @@ const home: Home = {
   subline: (
    <>
       We are <Text as="span" size="xl" weight="strong">Up4Work</Text>, a modern AI and software development team. <br />
-      We build scalable intelligent systems, and custom software solutions for startups and businesses.
+      We build scalable intelligent systems and custom software solutions for startups and businesses.
     </>
   ),
 };
