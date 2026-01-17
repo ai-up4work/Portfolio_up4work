@@ -58,8 +58,8 @@ export default function GalleryView() {
         paddingY="l"
         gap="m"
         direction="column"
-        align="center"
-        justify="center"
+        alignItems="center"
+        justifyContent="center"
         style={{ minHeight: '400px' }}
       >
         <Text variant="body-default-m" onBackground="neutral-weak">
@@ -77,8 +77,8 @@ export default function GalleryView() {
         paddingY="l"
         gap="m"
         direction="column"
-        align="center"
-        justify="center"
+        alignItems="center"
+        justifyContent="center"
         style={{ minHeight: '400px' }}
       >
         <Text variant="body-default-m" onBackground="accent-strong">
@@ -96,8 +96,8 @@ export default function GalleryView() {
         paddingY="l"
         gap="m"
         direction="column"
-        align="center"
-        justify="center"
+        alignItems="center"
+        justifyContent="center"
         style={{ minHeight: '400px' }}
       >
         <Text variant="heading-strong-l">📸</Text>
