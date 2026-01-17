@@ -53,14 +53,11 @@ export default function GalleryView() {
   if (loading) {
     return (
       <Flex
-        as="div"
         fillWidth
         paddingY="l"
         gap="m"
         direction="column"
-        alignItems="center"
-        justifyContent="center"
-        style={{ minHeight: '400px' }}
+        style={{ minHeight: '400px', alignItems: 'center', justifyContent: 'center' }}
       >
         <Text variant="body-default-m" onBackground="neutral-weak">
           Loading gallery...
@@ -72,14 +69,11 @@ export default function GalleryView() {
   if (error) {
     return (
       <Flex
-        as="div"
         fillWidth
         paddingY="l"
         gap="m"
         direction="column"
-        alignItems="center"
-        justifyContent="center"
-        style={{ minHeight: '400px' }}
+        style={{ minHeight: '400px', alignItems: 'center', justifyContent: 'center' }}
       >
         <Text variant="body-default-m" onBackground="accent-strong">
           {error}
@@ -91,14 +85,11 @@ export default function GalleryView() {
   if (images.length === 0) {
     return (
       <Flex
-        as="div"
         fillWidth
         paddingY="l"
         gap="m"
         direction="column"
-        alignItems="center"
-        justifyContent="center"
-        style={{ minHeight: '400px' }}
+        style={{ minHeight: '400px', alignItems: 'center', justifyContent: 'center' }}
       >
         <Text variant="heading-strong-l">📸</Text>
         <Text variant="body-default-m" onBackground="neutral-weak">
