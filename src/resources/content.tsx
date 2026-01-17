@@ -72,12 +72,12 @@ const home: Home = {
         </Text>
       </Row>
     ),
-    href: "/work/building-once-ui-a-customizable-design-system",
+    href: "/work",
   },
   subline: (
    <>
-      We are <Text as="span" size="xl" weight="strong">Up4Work</Text>, a software development team based in Sri Lanka. <br />
-      We build modern websites, software systems, and help businesses grow with digital marketing.
+      We are <Text as="span" size="xl" weight="strong">Up4Work</Text>, a modern AI and software development team. <br />
+      We build scalable intelligent systems and custom software solutions for startups and businesses.
     </>
   ),
 };
