@@ -9,6 +9,10 @@ import { routes, display, person, about, blog, work, gallery } from "@/resources
 import { ThemeToggle } from "./ThemeToggle";
 import styles from "./Header.module.scss";
 
+import Image from "next/image";
+import Link from "next/link";
+
+
 type TimeDisplayProps = {
   timeZone: string;
   locale?: string; // Optionally allow locale, defaulting to 'en-GB'
@@ -72,9 +76,21 @@ export const Header = () => {
           position: "fixed",
         }}
       >
-        <Row paddingLeft="12" fillWidth vertical="center" textVariant="body-default-s">
-          {display.location && <Row s={{ hide: true }}>{person.location}</Row>}
+
+
+        <Row paddingLeft="12" fillWidth vertical="center">
+          <Link href="/" aria-label="Up4Work Home">
+            <Image
+              src="/images/logo_circle.png"
+              alt="Up4Work Logo"
+              width={40}
+              height={40}
+              priority
+              style={{ cursor: "pointer" }}
+            />
+          </Link>
         </Row>
+
         <Row fillWidth horizontal="center">
           <Row
             background="page"
