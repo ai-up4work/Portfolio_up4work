@@ -23,13 +23,11 @@ interface IProject {
   title: string;
   description: string;
   author?: string;
-
   image: string;
   images?: string[];
-
+  avatars?: { src: string }[]; // Added avatars property
   createdAt?: Date;
   updatedAt?: Date;
-
   publishedAt: Date;
   featured: boolean;
   order: number;
@@ -48,17 +46,17 @@ interface IProject {
   };
 }
 
-
-
 const ProjectSchema = new Schema<IProject>({
   slug: { type: String, required: true, unique: true, index: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String, required: true },
-  images: [{ type: String }], // Add this line
+  images: [{ type: String }],
+  avatars: [{ src: { type: String } }], // Added avatars schema
   publishedAt: { type: Date, default: Date.now },
   featured: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
+  link: { type: String },
   tags: [{ type: String }],
   content: { type: String, required: true },
   metadata: {
@@ -89,6 +87,7 @@ interface IBlogPost {
     readTime?: string;
     views?: number;
     likes?: number;
+    tag?: string; // Added tag for category
   };
   seo?: {
     metaTitle?: string;
@@ -112,6 +111,7 @@ const BlogPostSchema = new Schema<IBlogPost>({
     readTime: { type: String },
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
+    tag: { type: String }, // Category tag
   },
   seo: {
     metaTitle: { type: String },
