@@ -268,7 +268,7 @@ export default function About() {
               </Heading>
               <Column fillWidth gap="l" marginBottom="40">
                 {about.studies.institutions.map((institution, index) => (
-                  <Column key={`${institution.name}-${index}`} fillWidth gap={5}>
+                  <Column key={`${institution.name}-${index}`} fillWidth gap="m">                    
                     <Text id={institution.name} variant="heading-strong-l">
                       {institution.name}
                     </Text>
