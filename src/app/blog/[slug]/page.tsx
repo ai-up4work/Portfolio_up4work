@@ -143,9 +143,9 @@ export default async function BlogPostPage({
           
           {post.image && (
             <Media
-              src={post.image && (post.image.startsWith('/') || post.image.startsWith('./'))
-                ? post.image 
-                : '/images/placeholder-project-1.jpg'}
+              src={typeof post.image === 'string' && post.image.length > 0
+                      ? post.image
+                      : '/images/placeholder-project-1.jpg'}
               alt={post.title}
               aspectRatio="16/9"
               priority

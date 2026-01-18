@@ -101,9 +101,10 @@ export function Posts({
                   title: post.title,
                   publishedAt: post.publishedAt,
                   summary: post.description,
-                  image: post.image && (post.image.startsWith('/') || post.image.startsWith('./'))
-                    ? post.image 
-                    : '/images/placeholder-project-1.jpg',
+                  image:
+                    typeof post.image === 'string' && post.image.length > 0
+                      ? post.image
+                      : '/images/placeholder-project-1.jpg',
                   author: post.author,
                   tags: post.tags,
                 },
