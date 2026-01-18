@@ -155,7 +155,7 @@ export default async function ProjectPage({
         )}
 
         {/* MDX Content using AdvancedMarkdown */}
-        <Column style={{ margin: "auto" }} as="article" maxWidth="xs">
+        <Column style={{ margin: "auto" }} as="article" maxWidth="s" gap="24">
           <AdvancedMarkdown source={project.content} />
         </Column>
 

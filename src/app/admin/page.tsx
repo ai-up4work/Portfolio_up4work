@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Link as LinkIcon, Eye, EyeOff, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import MDContentUpload from '@/components/admin/MDContentUpload';
 
 interface ItemData {
   _id?: string;
@@ -362,30 +363,30 @@ export default function AdminCMS() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      slug: '',
-      title: '',
-      description: '',
-      image: '',
-      images: [],
-      content: '',
-      author: '',
-      tags: '',
-      featured: false,
-      order: 0,
-      publishedAt: new Date().toISOString().split('T')[0],
-      readTime: '',
-      metaTitle: '',
-      metaDescription: '',
-      ogImage: '',
-      link: '',
-      avatars: '',
-      tag: ''
-    });
-    setEditingId(null);
-    setExpandedSections({ basic: true, media: true, content: true, metadata: false, seo: false });
-  };
+const resetForm = () => {
+  setFormData({
+    slug: '',
+    title: '',
+    description: '',
+    image: '',
+    images: [], // ✅ Always initialize as empty array
+    content: '',
+    author: '',
+    tags: '',
+    featured: false,
+    order: 0,
+    publishedAt: new Date().toISOString().split('T')[0],
+    readTime: '',
+    metaTitle: '',
+    metaDescription: '',
+    ogImage: '',
+    link: '',
+    avatars: '',
+    tag: ''
+  });
+  setEditingId(null);
+  setExpandedSections({ basic: true, media: true, content: true, metadata: false, seo: false });
+};
 
   const SectionHeader = ({ title, section }: { title: string; section: keyof typeof expandedSections }) => (
     <button
@@ -1051,7 +1052,7 @@ export default function AdminCMS() {
                               />
                             )}
 
-                            {formData.images.length > 0 && (
+                            {formData.images && formData.images.length > 0 && (
                               <div style={{ 
                                 display: 'grid', 
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', 
@@ -1201,30 +1202,13 @@ export default function AdminCMS() {
                 <div>
                   <SectionHeader title="Content" section="content" />
                   {expandedSections.content && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '14px', color: 'var(--neutral-on-background-medium)', marginBottom: '6px' }}>
-                        Main Content (Markdown) *
-                      </label>
-                      <textarea
-                        value={formData.content}
-                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                        placeholder="Write your content in Markdown format..."
-                        rows={12}
-                        style={{
-                          width: '100%',
-                          padding: '16px',
-                          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
-                          background: 'var(--input-background)',
-                          border: '1px solid var(--neutral-alpha-weak)',
-                          borderRadius: '8px',
-                          color: 'var(--neutral-on-background-strong)',
-                          outline: 'none',
-                          resize: 'vertical',
-                          fontFamily: 'monospace',
-                          lineHeight: '1.6'
-                        }}
-                      />
-                    </div>
+                    <MDContentUpload
+                      formData={formData}
+                      setFormData={setFormData}
+                      uploading={uploading}
+                      setUploading={setUploading}
+                      activeTab={activeTab}
+                    />
                   )}
                 </div>
 
