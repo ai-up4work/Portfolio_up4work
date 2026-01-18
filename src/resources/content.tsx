@@ -6,7 +6,7 @@ const person: Person = {
   lastName: "",
   name: "Up4Work",
   role: "Software Development",
-  avatar: "/images/logo.png",
+  avatar: "/images/avatar.png",
   email: "ai.up4work@gmail.com",
   location: "Asia/Colombo", // Expecting the IANA time zone identifier, e.g., 'Europe/Vienna'
   languages: ["English"], // optional: Leave the array empty if you don't want to display languages
@@ -75,7 +75,8 @@ const home: Home = {
     href: "/work",
   },
   subline: (
-   <>
+
+    <>
       We are <Text as="span" size="xl" weight="strong">Up4Work</Text>, a modern AI and software development team. <br />
       We build scalable intelligent systems and custom software solutions for startups and businesses.
     </>
@@ -111,93 +112,107 @@ const about: About = {
   },
   work: {
     display: true,
-    title: "Work Experience",
+    title: "Featured Projects",
     experiences: [
-      {
-        company: "Up4Work",
-        timeframe: "2024 - Present",
-        role: "Freelance Software Development Team",
-        achievements: [
-          <>Building modern, responsive websites for businesses and personal brands.</>,
-          <>Developing custom software solutions based on client needs.</>,
-          <>Providing digital marketing support to improve online visibility and engagement.</>,
-        ],
-        images: [
-          // optional: leave the array empty if you don't want to display images
-          {
-            src: "/images/projects/project-01/cover-01.jpg",
-            alt: "Once UI Project",
-            width: 16,
-            height: 9,
-          },
-        ],
-      },
       {
         company: "Alzia",
         timeframe: "2026",
         role: "Web Application",
         achievements: [
-          <>Building modern, responsive websites for businesses and personal brands.</>,
-          <>Developing custom software solutions based on client needs.</>,
-          <>Providing digital marketing support to improve online visibility and engagement.</>,
+          <>A premium e-commerce platform for luxury natural cosmetic products.</>,
+          <>Developed using Next.js and React to ensure high-performance, SEO-friendly storefronts.</>,
+          <>Integrated secure payment gateways and scalable database management for a seamless shopping experience.</>,
         ],
-        images: [],
+        images: [
+          {
+            src: "/images/alzia.png",  // Add your Alzia screenshot here
+            alt: "Alzia Web Application",
+            width: 16,
+            height: 9,
+          },
+        ],
       },
+
     ],
   },
   studies: {
     display: true,
-    title: "Studies",
+    title: "What We Can Build for You",
     institutions: [
       {
-        name: "Up4Work",
-        description: <>Learning and building real-world software projects.</>,
+        name: "Web, Mobile & Cloud Apps",
+        description: <>Full-stack web applications, mobile apps, and cloud-based solutions.</>,
+        images: [
+          {
+            src: "/images/Web.png",
+            alt: "Web, Mobile & Cloud Apps",
+            width: 16,
+            height: 9,
+          },
+        ],
+      },
+      {
+        name: "AI Solutions",
+        description: <>AI-powered applications and intelligent automation systems.</>,
+        images: [
+          {
+            src: "/images/AI solution.png",
+            alt: "AI Solutions",
+            width: 16,
+            height: 9,
+          },
+        ],
+      },
+      {
+        name: "Business Management Systems",
+        description: <>Custom software for inventory, CRM, and workflow management.</>,
+        images: [
+          {
+            src: "/images/BMS.png",
+            alt: "Business Management Systems",
+            width: 16,
+            height: 9,
+          },
+        ],
       },
     ],
   },
-   technical: {
+  technical: {
     display: true,
-    title: "Technical skills",
+    title: "Our Tech Stack",
     skills: [
       {
-        title: "Web Development",
-        description: <>We build fast, modern and responsive websites with the latest technologies.</>,
+        title: "Frontend Technologies",
         tags: [
           { name: "Next.js", icon: "nextjs" },
+          { name: "React", icon: "react" },
           { name: "JavaScript", icon: "javascript" },
         ],
-        // optional: leave the array empty if you don't want to display images
-        images: [
-          {
-            src: "/images/projects/project-01/cover-02.jpg",
-            alt: "Project image",
-            width: 16,
-            height: 9,
-          },
-          {
-            src: "/images/projects/project-01/cover-03.jpg",
-            alt: "Project image",
-            width: 16,
-            height: 9,
-          },
-        ],
+        images: [],  // No images
       },
       {
-        title: "Software Development",
-        description: <>We develop scalable software solutions for businesses and startups.</>,
-        tags: [{ name: "MongoDB", icon: "mongodb" }],
-        // optional: leave the array empty if you don't want to display images
-        images: [
-          {
-            src: "/images/projects/project-01/cover-04.jpg",
-            alt: "Project image",
-            width: 16,
-            height: 9,
-          },
+        title: "Backend & Database",
+        tags: [
+          { name: "Node.js", icon: "nodejs" },
+          { name: "Java" },
+          { name: "MongoDB", icon: "mongodb" },
+          { name: "Supabase" },
         ],
+        images: [],  // No images
+      },
+      {
+        title: "Cloud & Deployment",
+        tags: [
+          { name: "Vercel" },
+          { name: "AWS" },
+          { name: "Firebase" },
+        ],
+        images: [],  // No images
       },
     ],
   },
+
+
 };
 
 const blog: Blog = {
