@@ -175,14 +175,7 @@ export default async function ProjectPage({
           </Row>
         )}
 
-        {/* Related Projects */}
-        <Column fillWidth gap="40" horizontal="center" marginTop="40">
-          <Line maxWidth="40" />
-          <Heading as="h2" variant="heading-strong-xl" marginBottom="24">
-            Related projects
-          </Heading>
-          <Projects exclude={[project.slug]} range={[1, 3]} />
-        </Column>
+       
 
         <ScrollToHash />
       </Column>

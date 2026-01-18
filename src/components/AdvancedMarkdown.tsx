@@ -1,5 +1,7 @@
 // src/components/AdvancedMarkdown.tsx
-import { MDXRemote } from "next-mdx-remote/rsc";
+'use client';
+
+import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote/rsc";
 import { Heading, Text, SmartLink } from "@once-ui-system/core";
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -340,7 +342,7 @@ const mdxComponents = {
   ),
 };
 
-export async function AdvancedMarkdown({ source, className }: AdvancedMarkdownProps) {
+export function AdvancedMarkdown({ source, className }: AdvancedMarkdownProps) {
   return (
     <div className={className}>
       <MDXRemote
@@ -349,6 +351,7 @@ export async function AdvancedMarkdown({ source, className }: AdvancedMarkdownPr
         options={{
           mdxOptions: {
             remarkPlugins: [remarkGfm, remarkBreaks],
+            rehypePlugins: [],
           },
         }}
       />
