@@ -187,6 +187,7 @@ const about: About = {
           { name: "Next.js", icon: "nextjs" },
           { name: "React", icon: "react" },
           { name: "JavaScript", icon: "javascript" },
+          { name: "TypeScript", icon: "typescript" },
         ],
         images: [],  // No images
       },
@@ -195,6 +196,7 @@ const about: About = {
         tags: [
           { name: "Node.js", icon: "nodejs" },
           { name: "Java" },
+          { name: "Python" },
           { name: "MongoDB", icon: "mongodb" },
           { name: "Supabase" },
         ],
@@ -206,6 +208,7 @@ const about: About = {
           { name: "Vercel" },
           { name: "AWS" },
           { name: "Firebase" },
+          { name: "Snowflake" },
         ],
         images: [],  // No images
       },
