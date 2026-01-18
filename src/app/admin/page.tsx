@@ -116,7 +116,7 @@ export default function AdminCMS() {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const endpoint = activeTab === 'projects' ? '/api/work' : '/api/blog';
+      const endpoint = activeTab === 'projects' ? '/api/projects' : '/api/blog';
       const response = await fetch(endpoint);
       const result = await response.json();
       if (result.success) {
@@ -257,7 +257,7 @@ export default function AdminCMS() {
   const handleSubmit = async () => {
     setLoading(true);
 
-    const endpoint = activeTab === 'projects' ? '/api/work' : '/api/blog';
+    const endpoint = activeTab === 'projects' ? '/api/projects' : '/api/blog';
     const payload: any = {
       slug: formData.slug,
       title: formData.title,
@@ -343,11 +343,33 @@ export default function AdminCMS() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
-    const endpoint = activeTab === 'projects' ? '/api/work' : '/api/blog';
-ant to delete this item?')) return;
-
     const endpoint = activeTab === 'projects' ? '/api/projects' : '/api/blog';
- '',
+    
+    try {
+      const response = await fetch(`${endpoint}/${id}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Deleted successfully!');
+        fetchItems();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert('Error: ' + errorMessage);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      slug: '',
+      title: '',
+      description: '',
+      image: '',
+      images: [],
+      content: '',
       author: '',
       tags: '',
       featured: false,
