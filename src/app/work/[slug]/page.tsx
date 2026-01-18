@@ -1,6 +1,5 @@
-// src/app/projects/[slug]/page.tsx
+// src/app/work/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import { MDXRemote } from "next-mdx-remote/rsc";
 import {
   Meta,
   Schema,
@@ -19,23 +18,13 @@ import { Metadata } from "next";
 import { Projects } from "@/components/work/Projects";
 import dbConnect from "@/lib/mongodb";
 import { Project } from "@/lib/models";
-
-// Custom MDX components
-const mdxComponents = {
-  h1: (props: any) => <Heading variant="display-strong-l" {...props} />,
-  h2: (props: any) => <Heading variant="heading-strong-xl" {...props} />,
-  h3: (props: any) => <Heading variant="heading-strong-l" {...props} />,
-  p: (props: any) => <Text variant="body-default-m" {...props} />,
-  a: (props: any) => <SmartLink {...props} />,
-};
+import AdvancedMarkdown from "@/components/AdvancedMarkdown";
 
 // Generate static params for all projects
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   try {
     await dbConnect();
     const projects = await Project.find({}).select('slug').lean();
-    
-    console.log('Generated static params for projects:', projects.map(p => p.slug));
     
     return projects.map((project) => ({
       slug: project.slug,
@@ -55,13 +44,10 @@ export async function generateMetadata({
   try {
     const { slug } = await params;
     
-    console.log('Generating metadata for slug:', slug);
-    
     await dbConnect();
     const project = await Project.findOne({ slug }).lean();
 
     if (!project) {
-      console.log('Project not found for metadata:', slug);
       return {};
     }
 
@@ -85,25 +71,13 @@ export default async function ProjectPage({
 }) {
   const { slug } = await params;
   
-  console.log('Loading project page for slug:', slug);
-  
   try {
     await dbConnect();
     const project = await Project.findOne({ slug }).lean();
 
     if (!project) {
-      // Debug: List all available projects
-      const allProjects = await Project.find({}).select('slug title').lean();
-      console.log('Project not found. Available projects:', 
-        allProjects.map(p => ({ slug: p.slug, title: p.title }))
-      );
       notFound();
     }
-
-    console.log('Project found:', { slug: project.slug, title: project.title });
-
-    // Convert MongoDB _id to string for serialization
-    const serializedProject = JSON.parse(JSON.stringify(project));
 
     return (
       <Column as="section" maxWidth="m" horizontal="center" gap="l">
@@ -135,9 +109,21 @@ export default async function ProjectPage({
           </Text>
           <Heading variant="display-strong-m">{project.title}</Heading>
           
+          {/* Description */}
+          {project.description && (
+            <Text 
+              variant="body-default-l" 
+              onBackground="neutral-weak" 
+              align="center"
+              style={{ fontStyle: 'italic' }}
+            >
+              {project.description}
+            </Text>
+          )}
+          
           {/* Tags */}
           {project.tags && project.tags.length > 0 && (
-            <Row gap="8" horizontal="center">
+            <Row gap="8" horizontal="center" wrap>
               {project.tags.map((tag) => (
                 <Text
                   key={tag}
@@ -168,9 +154,9 @@ export default async function ProjectPage({
           />
         )}
 
-        {/* MDX Content */}
+        {/* MDX Content using AdvancedMarkdown */}
         <Column style={{ margin: "auto" }} as="article" maxWidth="xs">
-          <MDXRemote source={project.content} components={mdxComponents} />
+          <AdvancedMarkdown source={project.content} />
         </Column>
 
         {/* Metadata Footer */}

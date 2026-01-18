@@ -1,5 +1,6 @@
+// src/app/blog/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import { CustomMDX, ScrollToHash } from "@/components";
+import { ScrollToHash } from "@/components";
 import {
   Meta,
   Schema,
@@ -19,6 +20,7 @@ import { Metadata } from "next";
 import React from "react";
 import { Posts } from "@/components/blog/Posts";
 import { ShareSection } from "@/components/blog/ShareSection";
+import AdvancedMarkdown from "@/components/AdvancedMarkdown";
 
 async function getBlogPost(slug: string) {
   try {
@@ -91,6 +93,7 @@ export default async function BlogPostPage({
               image: `${baseURL}${person.avatar}`,
             }}
           />
+          
           <Column maxWidth="s" gap="16" horizontal="center" align="center">
             <SmartLink href="/blog">
               <Text variant="label-strong-m">Blog</Text>
@@ -110,6 +113,7 @@ export default async function BlogPostPage({
               </Text>
             )}
           </Column>
+          
           <Row marginBottom="32" horizontal="center">
             <Row gap="16" vertical="center">
               <Avatar size="s" src={person.avatar} />
@@ -126,6 +130,7 @@ export default async function BlogPostPage({
               )}
             </Row>
           </Row>
+          
           {post.tags && post.tags.length > 0 && (
             <Row gap="8" horizontal="center" wrap marginBottom="16">
               {post.tags.map((tag: string) => (
@@ -135,6 +140,7 @@ export default async function BlogPostPage({
               ))}
             </Row>
           )}
+          
           {post.image && (
             <Media
               src={post.image && (post.image.startsWith('/') || post.image.startsWith('./'))
@@ -150,8 +156,10 @@ export default async function BlogPostPage({
               marginBottom="8"
             />
           )}
+          
+          {/* Replace CustomMDX with AdvancedMarkdown */}
           <Column as="article" maxWidth="s">
-            <CustomMDX source={post.content} />
+            <AdvancedMarkdown source={post.content} />
           </Column>
           
           <ShareSection 
@@ -159,13 +167,7 @@ export default async function BlogPostPage({
             url={`${baseURL}${blog.path}/${post.slug}`} 
           />
 
-          <Column fillWidth gap="40" horizontal="center" marginTop="40">
-            <Line maxWidth="40" />
-            <Text as="h2" id="recent-posts" variant="heading-strong-xl" marginBottom="24">
-              Recent posts
-            </Text>
-            <Posts exclude={[post.slug]} range={[1, 2]} columns="2" thumbnail direction="column" />
-          </Column>
+          
           <ScrollToHash />
         </Column>
       </Row>
