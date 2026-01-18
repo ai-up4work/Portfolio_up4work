@@ -107,7 +107,7 @@ function ProjectsEmpty() {
         paddingY="xl"
         style={{ alignItems: 'center' }}
       >
-        <div className="text-6xl mb-4">📁</div>
+        {/* <div className="text-6xl mb-4">📁</div> */}
 
         <Column gap="s" style={{ alignItems: 'center' }}>
           <Text variant="heading-strong-l" onBackground="neutral-strong">
@@ -238,7 +238,7 @@ export function Projects({ range, exclude }: ProjectsProps) {
         return (
           <ProjectCard
             key={project.slug || `project-${index}`}
-            href={`/projects/${project.slug}`}
+            href={`/work/${project.slug}`}
             images={projectImages}
             priority={index === 0} // Priority loading for first image
             title={project.title}

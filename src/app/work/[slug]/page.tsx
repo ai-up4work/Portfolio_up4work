@@ -1,4 +1,4 @@
-// src/app/work/projects/[slug]/page.tsx
+// src/app/projects/[slug]/page.tsx
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import {
@@ -34,6 +34,9 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   try {
     await dbConnect();
     const projects = await Project.find({}).select('slug').lean();
+    
+    console.log('Generated static params for projects:', projects.map(p => p.slug));
+    
     return projects.map((project) => ({
       slug: project.slug,
     }));
@@ -50,21 +53,24 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   try {
-    const { slug: encodedSlug } = await params;
-    // Decode the URL-encoded slug
-    const slug = decodeURIComponent(encodedSlug);
+    const { slug } = await params;
+    
+    console.log('Generating metadata for slug:', slug);
     
     await dbConnect();
     const project = await Project.findOne({ slug }).lean();
 
-    if (!project) return {};
+    if (!project) {
+      console.log('Project not found for metadata:', slug);
+      return {};
+    }
 
     return Meta.generate({
       title: project.seo?.metaTitle || project.title,
       description: project.seo?.metaDescription || project.description,
       baseURL: baseURL,
       image: project.seo?.ogImage || project.image || `/api/og/generate?title=${encodeURIComponent(project.title)}`,
-      path: `${work.path}/${encodeURIComponent(project.slug)}`,
+      path: `${work.path}/${project.slug}`,
     });
   } catch (error) {
     console.error('Error generating metadata:', error);
@@ -77,20 +83,24 @@ export default async function ProjectPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
+  
+  console.log('Loading project page for slug:', slug);
+  
   try {
-    const { slug: encodedSlug } = await params;
-    // Decode the URL-encoded slug
-    const slug = decodeURIComponent(encodedSlug);
-    
-    console.log('Looking for project with slug:', slug); // Debug log
-    
     await dbConnect();
     const project = await Project.findOne({ slug }).lean();
 
     if (!project) {
-      console.log('Project not found:', slug); // Debug log
+      // Debug: List all available projects
+      const allProjects = await Project.find({}).select('slug title').lean();
+      console.log('Project not found. Available projects:', 
+        allProjects.map(p => ({ slug: p.slug, title: p.title }))
+      );
       notFound();
     }
+
+    console.log('Project found:', { slug: project.slug, title: project.title });
 
     // Convert MongoDB _id to string for serialization
     const serializedProject = JSON.parse(JSON.stringify(project));
@@ -100,7 +110,7 @@ export default async function ProjectPage({
         <Schema
           as="blogPosting"
           baseURL={baseURL}
-          path={`${work.path}/${encodeURIComponent(project.slug)}`}
+          path={`${work.path}/${project.slug}`}
           title={project.title}
           description={project.description}
           datePublished={project.publishedAt.toISOString()}

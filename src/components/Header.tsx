@@ -81,7 +81,7 @@ export const Header = () => {
         <Row paddingLeft="12" fillWidth vertical="center">
           <Link href="/" aria-label="Up4Work Home">
             <Image
-              src="/images/logo_circle.png"
+              src="/images/logo-removebg-preview.png"
               alt="Up4Work Logo"
               width={40}
               height={40}
