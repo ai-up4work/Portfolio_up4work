@@ -19,7 +19,7 @@ const TECH_STACK = [
 export default function TechStackSection() {
   return (
     <Column fillWidth gap="xl" marginBottom="xl">
-      {/* Section Header */}
+      {/* SECTION HEADER */}
       <Column align="center" gap="s">
         <Heading variant="display-strong-xs">Tech Stack We Use</Heading>
         <Text onBackground="neutral-weak">
@@ -27,19 +27,12 @@ export default function TechStackSection() {
         </Text>
       </Column>
 
-      {/* Grid */}
-      <div
-        className="tech-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "24px",
-          width: "100%",
-        }}
-      >
+      {/* GRID */}
+      <div className="tech-grid">
         {TECH_STACK.map((tech) => (
           <Column
             key={tech.name}
+            className="tech-card"
             position="relative"
             overflow="hidden"
             padding="l"
@@ -50,7 +43,7 @@ export default function TechStackSection() {
             align="center"
             style={{ minHeight: "200px" }}
           >
-            {/* ✅ EXACT Mailchimp Effect */}
+            {/* MAILCHIMP EFFECT */}
             <Background
               position="absolute"
               top="0"
@@ -82,7 +75,7 @@ export default function TechStackSection() {
               }}
             />
 
-            {/* Logo */}
+            {/* LOGO */}
             <img
               src={tech.logo}
               alt={tech.name}
@@ -95,7 +88,7 @@ export default function TechStackSection() {
               }}
             />
 
-            {/* Caption */}
+            {/* NAME */}
             <Text variant="body-strong-s" style={{ zIndex: 1 }}>
               {tech.name}
             </Text>
@@ -103,17 +96,51 @@ export default function TechStackSection() {
         ))}
       </div>
 
-      {/* Responsive behavior */}
+      {/* STYLES */}
       <style jsx>{`
+        .tech-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+          width: 100%;
+        }
+
+        .tech-card {
+          transition:
+            transform 140ms ease-out,
+            box-shadow 140ms ease-out,
+            border-color 140ms ease-out;
+          will-change: transform;
+        }
+
+        @media (hover: hover) {
+          .tech-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow:
+              0 18px 40px rgba(0, 0, 0, 0.45),
+              0 0 0 1px rgba(255, 255, 255, 0.08);
+          }
+        }
+
+        /* TABLET */
         @media (max-width: 900px) {
           .tech-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
 
+        /* MOBILE */
         @media (max-width: 600px) {
           .tech-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          /* CENTER LAST ITEM */
+          .tech-card:last-child {
+            grid-column: 1 / -1;
+            justify-self: center;
+            width: 60%;
           }
         }
       `}</style>
