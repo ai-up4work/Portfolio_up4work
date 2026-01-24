@@ -78,6 +78,7 @@ export default function AdminCMS() {
   const { toasts, removeToast, toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirm();
 
+
   useEffect(() => {
     if (activeTab === 'gallery') {
       fetchGalleryImages();
@@ -117,6 +118,7 @@ export default function AdminCMS() {
     }
   };
 
+ 
   const uploadToCloudinary = async (file: File, folder: string): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -384,17 +386,48 @@ export default function AdminCMS() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
                   {galleryImages.map(img => (
-                    <div key={img.id} style={{
-                      position: 'relative', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden',
-                      border: '1px solid var(--neutral-alpha-weak)', transition: 'all 0.2s ease'
-                    }}>
+                    <div 
+                      key={img.id} 
+                      style={{
+                        position: 'relative', 
+                        aspectRatio: '1', 
+                        borderRadius: '12px', 
+                        overflow: 'hidden',
+                        border: '1px solid var(--neutral-alpha-weak)', 
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        const btn = e.currentTarget.querySelector('button') as HTMLElement;
+                        if (btn) btn.style.opacity = '1';
+                      }}
+                      onMouseLeave={(e) => {
+                        const btn = e.currentTarget.querySelector('button') as HTMLElement;
+                        if (btn) btn.style.opacity = '0';
+                      }}
+                    >
                       <img src={img.thumbnail} alt={img.id} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button onClick={() => deleteGalleryImage(img.id)} style={{
-                        position: 'absolute', top: '8px', right: '8px', background: 'var(--accent-background-strong)',
-                        color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                        padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)', opacity: 0, transition: 'opacity 0.2s ease'
-                      }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0'}>
+                      <button 
+                        onClick={() => deleteGalleryImage(img.id)} 
+                        style={{
+                          position: 'absolute', 
+                          top: '8px', 
+                          right: '8px', 
+                          background: 'var(--accent-background-strong)',
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '50%', 
+                          width: '32px', 
+                          height: '32px',
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          cursor: 'pointer',
+                          padding: 0, 
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)', 
+                          opacity: 0, 
+                          transition: 'opacity 0.2s ease'
+                        }}
+                      >
                         <X size={18} />
                       </button>
                     </div>
