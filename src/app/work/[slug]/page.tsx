@@ -19,6 +19,8 @@ import { Projects } from "@/components/work/Projects";
 import dbConnect from "@/lib/mongodb";
 import { Project } from "@/lib/models";
 import AdvancedMarkdown from "@/components/AdvancedMarkdown";
+import { ShareSection } from "@/components/blog/ShareSection";
+
 
 // Generate static params for all projects
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
@@ -158,6 +160,12 @@ export default async function ProjectPage({
         <Column style={{ margin: "auto" }} as="article" maxWidth="s" gap="24">
           <AdvancedMarkdown source={project.content} />
         </Column>
+
+        {/* Share Section */}
+        <ShareSection 
+          title={project.title} 
+          url={`${baseURL}${work.path}/${project.slug}`} 
+        />
 
         {/* Metadata Footer */}
         {project.metadata && (
