@@ -42,18 +42,12 @@ export default function ServicesSection() {
         </Text>
       </Column>
 
-      {/* RESPONSIVE GRID */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "24px",
-          width: "100%",
-        }}
-      >
+      {/* GRID */}
+      <div className="services-grid">
         {SERVICES.map((service, index) => (
           <Column
             key={index}
+            className="service-card"
             position="relative"
             overflow="hidden"
             padding="l"
@@ -66,7 +60,7 @@ export default function ServicesSection() {
               justifyContent: "center",
             }}
           >
-            {/* MAILCHIMP-STYLE BACKGROUND */}
+            {/* MAILCHIMP EFFECT */}
             <Background
               position="absolute"
               top="0"
@@ -99,7 +93,7 @@ export default function ServicesSection() {
             />
 
             {/* CONTENT */}
-            <Column gap="xs">
+            <Column gap="xs" style={{ zIndex: 1 }}>
               <Heading variant="heading-strong-m">
                 {service.title}
               </Heading>
@@ -116,11 +110,36 @@ export default function ServicesSection() {
         ))}
       </div>
 
-      {/* MOBILE STACK FIX */}
+      {/* FAST HOVER + RESPONSIVE */}
       <style jsx>{`
+        .services-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+          width: 100%;
+        }
+
+        .service-card {
+          transition:
+            transform 140ms ease-out,
+            box-shadow 140ms ease-out,
+            border-color 140ms ease-out;
+          will-change: transform;
+        }
+
+        @media (hover: hover) {
+          .service-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow:
+              0 18px 40px rgba(0, 0, 0, 0.45),
+              0 0 0 1px rgba(255, 255, 255, 0.08);
+          }
+        }
+
         @media (max-width: 768px) {
-          div {
-            grid-template-columns: 1fr !important;
+          .services-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
