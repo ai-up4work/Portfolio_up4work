@@ -1,19 +1,167 @@
 @use "../breakpoints.scss" as breakpoints;
 
-.hover {
-    transition: var(--transition-micro-medium);
-
-    &:hover {
-        transform: translateX(var(--static-space-4));
+// Define the animation
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
+.about {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    
+    // Apply the animation here
+    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+// ... rest of your existing styles ...
+
+
+.about {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.section {
+    width: 100%;
+    max-width: 900px;
+    padding: 6rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sectionTitle {
+    text-align: center;
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    letter-spacing: -0.02em;
+}
+
+.missionText {
+    text-align: center;
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: var(--neutral-on-background-medium);
+    max-width: 800px;
+}
+
+.expertiseSection {
+    width: 100%;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.expertiseIntro {
+    max-width: 800px;
+    margin-bottom: 4rem;
+    text-align: center;
+}
+
+.expertiseTitle {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.expertiseSubtitle {
+    font-size: 1.125rem;
+    color: var(--neutral-on-background-medium);
+}
+
+.expertiseGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 1000px;
+    width: 100%;
+}
+
+// Updated to match your ServicesSection.tsx CSS
+.expertiseCard {
+    transition: transform 140ms ease-out, box-shadow 140ms ease-out, border-color 140ms ease-out;
+    will-change: transform;
+    min-height: 250px; // Ensure enough height for content
+    
+    &:hover {
+        transform: translateY(-6px);
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+}
+
+.expertiseHeader {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--neutral-border-weak);
+}
+
+.expertiseCount {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--brand-solid-strong);
+}
+
+.expertiseRole {
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.expertiseDescription {
+    line-height: 1.6;
+    font-size: 1rem;
+    color: var(--neutral-on-background-medium);
+}
+
+.expertiseSkills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.contactSection {
+    width: 100%;
+    max-width: 800px;
+    padding: 6rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.contactButtons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+
 @media (max-width: breakpoints.$s) {
-    .textAlign {
-        text-align: center;
+    .expertiseGrid {
+        grid-template-columns: 1fr;
     }
 
-    .blockAlign {
-        align-self: center;
+    .contactButtons {
+        flex-direction: column;
+        width: 100%;
+        > * { width: 100%; }
     }
 }
