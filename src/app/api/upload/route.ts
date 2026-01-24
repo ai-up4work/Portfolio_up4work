@@ -1,6 +1,7 @@
 // src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import crypto from 'crypto';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -62,12 +63,49 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // Generate hash of the file content to check for duplicates
+    const fileHash = crypto.createHash('md5').update(buffer).digest('hex');
+
+    // Check if an image with the same hash already exists in this folder
+    try {
+      const searchResult = await cloudinary.search
+        .expression(`folder:${folder}/* AND context.content_hash=${fileHash}`)
+        .max_results(1)
+        .execute();
+
+      if (searchResult.resources.length > 0) {
+        const existingImage = searchResult.resources[0];
+        
+        // Return the existing image instead of an error
+        return NextResponse.json({
+          success: true,  // ← Changed to true
+          url: existingImage.secure_url,
+          public_id: existingImage.public_id,
+          width: existingImage.width,
+          height: existingImage.height,
+          format: existingImage.format,
+          original_filename: file.name,
+          message: 'Image already exists, returning existing image' // Optional
+        });
+      }
+    } catch (searchError) {
+      console.error('Error checking for duplicates:', searchError);
+      // Continue with upload even if search fails
+    }
+
+    // Generate a unique identifier using timestamp + random string
+    const timestamp = Date.now();
+    const randomString = crypto.randomBytes(8).toString('hex');
+    const uniqueId = `${timestamp}_${randomString}`;
+
     // Upload to Cloudinary using a Promise
     const result = await new Promise<any>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: folder,
+          public_id: uniqueId, // Use unique ID instead of filename
           resource_type: 'auto',
+          context: `content_hash=${fileHash}|original_filename=${file.name}`, // Store metadata
           transformation: [
             { width: 1920, crop: 'limit' }, // Limit max width
             { quality: 'auto' }, // Auto quality
@@ -94,7 +132,8 @@ export async function POST(request: NextRequest) {
       public_id: result.public_id,
       width: result.width,
       height: result.height,
-      format: result.format
+      format: result.format,
+      original_filename: file.name
     });
 
   } catch (error: any) {

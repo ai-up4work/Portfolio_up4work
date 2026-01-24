@@ -30,9 +30,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const maxResults = parseInt(searchParams.get('max') || '500');
 
-    // Fetch images from the gallery folder
+    // Fetch images from the gallery folder and all subfolders using wildcard
     const result = await cloudinary.search
-      .expression('folder:Up4work-portfolio/gallery')
+      .expression('folder:Up4work-portfolio/*')
       .sort_by('created_at', 'desc')
       .max_results(maxResults)
       .execute();
