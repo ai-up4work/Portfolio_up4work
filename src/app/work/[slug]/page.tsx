@@ -144,13 +144,13 @@ export default async function ProjectPage({
         </Column>
 
         {/* Featured Image */}
-        {(project.images?.[0] || project.image) && (
+        {(project.image || project.image) && (
           <Media
             priority
             aspectRatio="16 / 9"
             radius="m"
             alt={project.title}
-            src={project.images?.[0] || project.image}
+            src={project.image}
           />
         )}
 

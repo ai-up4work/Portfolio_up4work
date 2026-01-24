@@ -1,21 +1,95 @@
 // src/components/AdvancedMarkdown.tsx
 'use client';
 
-import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote/rsc";
-import { Heading, Text, SmartLink } from "@once-ui-system/core";
+import { useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import { Heading, Text, SmartLink } from "@once-ui-system/core";
+import mermaid from 'mermaid';
 
 interface AdvancedMarkdownProps {
   source: string;
   className?: string;
 }
 
-// Enhanced MDX components with comprehensive styling
-const mdxComponents = {
+// Mermaid diagram component
+function MermaidDiagram({ chart }: { chart: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      // Initialize mermaid with custom theme
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'dark',
+        themeVariables: {
+          primaryColor: '#06b6d4',
+          primaryTextColor: '#e2e8f0',
+          primaryBorderColor: '#0891b2',
+          lineColor: '#22d3ee',
+          secondaryColor: '#0891b2',
+          tertiaryColor: '#164e63',
+          background: '#0f172a',
+          mainBkg: '#0f172a',
+          secondBkg: '#1e293b',
+          tertiaryBkg: '#334155',
+          textColor: '#e2e8f0',
+          fontSize: '16px',
+          fontFamily: 'var(--font-sans, system-ui, sans-serif)'
+        },
+        flowchart: {
+          curve: 'basis',
+          padding: 20
+        }
+      });
+
+      // Render the mermaid diagram
+      const renderDiagram = async () => {
+        try {
+          const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+          const { svg } = await mermaid.render(id, chart);
+          if (ref.current) {
+            ref.current.innerHTML = svg;
+          }
+        } catch (error) {
+          console.error('Mermaid rendering error:', error);
+          if (ref.current) {
+            ref.current.innerHTML = `<pre style="color: #ef4444; padding: 1rem;">Error rendering diagram: ${error}</pre>`;
+          }
+        }
+      };
+
+      renderDiagram();
+    }
+  }, [chart]);
+
+  return (
+    <div style={{
+      marginBottom: '2.5rem',
+      marginTop: '1.5rem',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      border: '3px solid transparent',
+      background: 'linear-gradient(#0f172a, #0f172a) padding-box, linear-gradient(135deg, #06b6d4, #0891b2, #22d3ee) border-box',
+      boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)',
+      padding: '2rem'
+    }}>
+      <div ref={ref} style={{ 
+        display: 'flex', 
+        justifyContent: 'center',
+        alignItems: 'center'
+      }} />
+    </div>
+  );
+}
+
+// Enhanced markdown components with comprehensive styling
+const markdownComponents = {
   // Headings with proper spacing
   h1: (props: any) => (
     <Heading 
+      as="h1"
       variant="display-strong-l" 
       style={{ 
         marginTop: '2.5rem', 
@@ -27,6 +101,7 @@ const mdxComponents = {
   ),
   h2: (props: any) => (
     <Heading 
+      as="h2"
       variant="heading-strong-xl" 
       style={{ 
         marginTop: '3rem', 
@@ -44,6 +119,7 @@ const mdxComponents = {
   ),
   h3: (props: any) => (
     <Heading 
+      as="h3"
       variant="heading-strong-l" 
       style={{ 
         marginTop: '2rem', 
@@ -56,6 +132,7 @@ const mdxComponents = {
   ),
   h4: (props: any) => (
     <Heading 
+      as="h4"
       variant="heading-strong-m" 
       style={{ 
         marginTop: '1.75rem', 
@@ -68,6 +145,7 @@ const mdxComponents = {
   ),
   h5: (props: any) => (
     <Heading 
+      as="h5"
       variant="heading-strong-s" 
       style={{ 
         marginTop: '1.5rem', 
@@ -79,6 +157,7 @@ const mdxComponents = {
   ),
   h6: (props: any) => (
     <Text 
+      as="h6"
       variant="label-strong-m" 
       style={{ 
         marginTop: '1.25rem', 
@@ -95,6 +174,7 @@ const mdxComponents = {
   // Paragraphs
   p: (props: any) => (
     <Text 
+      as="p"
       variant="body-default-m" 
       style={{ 
         marginBottom: '1.25rem', 
@@ -109,7 +189,7 @@ const mdxComponents = {
   a: (props: any) => (
     <SmartLink 
       style={{
-        color: '#06b6d4', // Cyan color
+        color: '#06b6d4',
         textDecoration: 'none',
         borderBottom: '2px solid transparent',
         transition: 'all 0.2s ease',
@@ -191,16 +271,19 @@ const mdxComponents = {
     />
   ),
   
-  // Inline Code
+  // Code
   code: (props: any) => {
-    const { children, className } = props;
-    const isCodeBlock = className?.startsWith('language-');
+    const { children, className, node, ...rest } = props;
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
     
-    if (isCodeBlock) {
-      // Extract language from className
-      const language = className?.replace('language-', '') || 'text';
-      
-      // Code block with enhanced design
+    // Mermaid diagram
+    if (language === 'mermaid') {
+      return <MermaidDiagram chart={String(children).trim()} />;
+    }
+    
+    // Code block (from fenced code blocks)
+    if (match) {
       return (
         <div style={{
           position: 'relative',
@@ -241,9 +324,10 @@ const mdxComponents = {
               fontFamily: 'var(--font-code)',
               overflowX: 'auto',
               lineHeight: '1.6',
-              color: '#e2e8f0'
+              color: '#e2e8f0',
+              whiteSpace: 'pre'
             }}
-            className={className}
+            {...rest}
           >
             {children}
           </code>
@@ -251,7 +335,7 @@ const mdxComponents = {
       );
     }
     
-    // Inline code with cyan accent
+    // Inline code
     return (
       <code 
         style={{ 
@@ -264,21 +348,53 @@ const mdxComponents = {
           color: '#0891b2',
           fontWeight: 500
         }}
-        {...props}
-      />
+        {...rest}
+      >
+        {children}
+      </code>
     );
   },
   
-  // Pre (wraps code blocks)
-  pre: (props: any) => (
-    <pre 
-      style={{ 
-        marginBottom: '0',
-        overflow: 'visible'
-      }}
-      {...props}
-    />
-  ),
+  // Pre (wraps code blocks and ASCII diagrams)
+  pre: (props: any) => {
+    const { children, node, ...rest } = props;
+    
+    // Check if this is a plain text block (like ASCII diagrams) without language specification
+    const hasCodeChild = children?.props?.className?.startsWith('language-');
+    
+    if (!hasCodeChild && typeof children === 'object' && children?.props?.children) {
+      // This is likely an ASCII diagram or plain code block
+      return (
+        <div style={{
+          position: 'relative',
+          marginBottom: '2rem',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          border: '1px solid var(--neutral-alpha-medium)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+        }}>
+          <pre 
+            style={{ 
+              display: 'block',
+              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+              padding: '1.5rem',
+              fontSize: '0.875em',
+              fontFamily: 'var(--font-code)',
+              overflowX: 'auto',
+              lineHeight: '1.6',
+              color: '#e2e8f0',
+              margin: 0
+            }}
+            {...rest}
+          >
+            {children}
+          </pre>
+        </div>
+      );
+    }
+    
+    return <>{children}</>;
+  },
   
   // Blockquotes
   blockquote: (props: any) => (
@@ -391,73 +507,57 @@ const mdxComponents = {
   ),
 
   // Images with enhanced design borders and effects
-  img: (props: any) => (
-    <div style={{
-      marginBottom: '2.5rem',
-      marginTop: '1.5rem'
-    }}>
+  img: (props: any) => {
+    const { node, ...imgProps } = props;
+    return (
       <div style={{
-        position: 'relative',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: '3px solid transparent',
-        background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #06b6d4, #0891b2, #22d3ee) border-box',
-        boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)',
-        transition: 'all 0.3s ease'
-      }}
-      onMouseEnter={(e: any) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 12px 32px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.2)';
-      }}
-      onMouseLeave={(e: any) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)';
-      }}
-      >
-        <img
-          style={{
-            width: '100%',
-            height: 'auto',
-            display: 'block',
-            borderRadius: '13px'
-          }}
-          {...props}
-        />
-        {/* Decorative corner accents */}
-        {/* <div style={{
-          position: 'absolute',
-          top: '12px',
-          left: '12px',
-          width: '24px',
-          height: '24px',
-          borderTop: '3px solid #06b6d4',
-          borderLeft: '3px solid #06b6d4',
-          borderRadius: '4px 0 0 0'
-        }} /> */}
-        {/* <div style={{
-          position: 'absolute',
-          bottom: '12px',
-          right: '12px',
-          width: '24px',
-          height: '24px',
-          borderBottom: '3px solid #22d3ee',
-          borderRight: '3px solid #22d3ee',
-          borderRadius: '0 0 4px 0'
-        }} /> */}
+        marginBottom: '2.5rem',
+        marginTop: '1.5rem'
+      }}>
+        <div style={{
+          position: 'relative',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          border: '3px solid transparent',
+          background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #06b6d4, #0891b2, #22d3ee) border-box',
+          boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)',
+          transition: 'all 0.3s ease'
+        }}
+        onMouseEnter={(e: any) => {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 32px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.2)';
+        }}
+        onMouseLeave={(e: any) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)';
+        }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+              borderRadius: '13px'
+            }}
+            {...imgProps}
+            alt={imgProps.alt || ''}
+          />
+        </div>
+        {imgProps.alt && (
+          <p style={{
+            marginTop: '1rem',
+            fontSize: '0.875rem',
+            color: 'var(--neutral-on-background-weak)',
+            fontStyle: 'italic',
+            textAlign: 'center'
+          }}>
+            {imgProps.alt}
+          </p>
+        )}
       </div>
-      {props.alt && (
-        <p style={{
-          marginTop: '1rem',
-          fontSize: '0.875rem',
-          color: 'var(--neutral-on-background-weak)',
-          fontStyle: 'italic',
-          textAlign: 'center'
-        }}>
-          {props.alt}
-        </p>
-      )}
-    </div>
-  ),
+    );
+  },
 };
 
 export function AdvancedMarkdown({ source, className }: AdvancedMarkdownProps) {
@@ -465,23 +565,18 @@ export function AdvancedMarkdown({ source, className }: AdvancedMarkdownProps) {
     <div 
       className={className}
       style={{
-        // Make markdown section wider
         maxWidth: '85vw',
         width: '100%',
         margin: '0 auto',
         padding: '2rem'
       }}
     >
-      <MDXRemote
-        source={source}
-        components={mdxComponents}
-        options={{
-          mdxOptions: {
-            remarkPlugins: [remarkGfm, remarkBreaks],
-            rehypePlugins: [],
-          },
-        }}
-      />
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkBreaks]}
+        components={markdownComponents}
+      >
+        {source}
+      </ReactMarkdown>
     </div>
   );
 }
