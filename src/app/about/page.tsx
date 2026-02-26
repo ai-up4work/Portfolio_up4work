@@ -1,363 +1,182 @@
+"use client";
+
 import {
-  Avatar,
   Button,
-  Column,
   Heading,
   Icon,
-  IconButton,
-  Media,
   Tag,
   Text,
   Meta,
-  Schema,
+  Background,
+  Column,
   Row,
+  opacity,         // Added import
+  SpacingToken,    // Added import
 } from "@once-ui-system/core";
-import { baseURL, about, person, social } from "@/resources";
-import TableOfContents from "@/components/about/TableOfContents";
+import { baseURL, mailchimp } from "@/resources"; // Added mailchimp import
 import styles from "@/components/about/about.module.scss";
-import React from "react";
 
-export async function generateMetadata() {
-  return Meta.generate({
-    title: about.title,
-    description: about.description,
-    baseURL: baseURL,
-    image: `/api/og/generate?title=${encodeURIComponent(about.title)}`,
-    path: about.path,
-  });
-}
+const company = {
+  name: "Up4Work",
+  email: "ai.up4work@gmail.com",
+  phone: "+94779633340",
+  mission:
+    "At Up4Work, our mission is to deliver robust and scalable solutions that empower businesses with modern technology. We transform complex business requirements into elegant, high-performance software that drives growth and efficiency.",
+};
+
+const expertise = [
+  {
+    role: "Software Developers",
+    count: "5+",
+    description: "Expert full-stack developers specializing in Next.js, React, PHP, and modern web frameworks.",
+    skills: ["Next.js", "React", "PHP", "Node.js"]
+  },
+  {
+    role: "Data Engineers",
+    count: "3+",
+    description: "Database architects and data pipeline experts working with SQL, NoSQL, and real-time analytics.",
+    skills: ["PostgreSQL", "Supabase", "MongoDB", "Redis"]
+  },
+  {
+    role: "AI Engineers",
+    count: "2+",
+    description: "Machine learning specialists implementing intelligent automation and predictive analytics.",
+    skills: ["Python", "TensorFlow", "ML", "NLP"]
+  },
+  {
+    role: "Digital Marketers",
+    count: "3+",
+    description: "SEO experts and growth strategists who optimize your digital presence and drive traffic.",
+    skills: ["SEO", "Analytics", "Content Strategy"]
+  },
+];
 
 export default function About() {
-  const structure = [
-    {
-      title: about.intro.title,
-      display: about.intro.display,
-      items: [],
-    },
-    {
-      title: about.work.title,
-      display: about.work.display,
-      items: about.work.experiences.map((experience) => experience.company),
-    },
-    {
-      title: about.studies.title,
-      display: about.studies.display,
-      items: about.studies.institutions.map((institution) => institution.name),
-    },
-    {
-      title: about.technical.title,
-      display: about.technical.display,
-      items: about.technical.skills.map((skill) => skill.title),
-    },
-  ];
   return (
-    <Column maxWidth="m">
-      <Schema
-        as="webPage"
-        baseURL={baseURL}
-        title={about.title}
-        description={about.description}
-        path={about.path}
-        image={`/api/og/generate?title=${encodeURIComponent(about.title)}`}
-        author={{
-          name: person.name,
-          url: `${baseURL}${about.path}`,
-          image: `${baseURL}${person.avatar}`,
-        }}
-      />
-      {about.tableOfContent.display && (
-        <Column
-          left="0"
-          style={{ top: "50%", transform: "translateY(-50%)" }}
-          position="fixed"
-          paddingLeft="24"
-          gap="32"
-          s={{ hide: true }}
-        >
-          <TableOfContents structure={structure} about={about} />
+    <Column className={styles.about} fillWidth>
+      
+      {/* Mission Section */}
+      <Column className={styles.section}>
+        <Heading variant="display-strong-l" className={styles.sectionTitle}>
+          Our Mission
+        </Heading>
+        <Text variant="body-default-m" className={styles.missionText}>
+          {company.mission}
+        </Text>
+      </Column>
+
+      {/* Expertise Section */}
+      <Column className={styles.expertiseSection} fillWidth>
+        <Column className={styles.expertiseIntro}>
+          <Heading variant="display-strong-l" className={styles.expertiseTitle}>
+            Our Expert Team
+          </Heading>
+          <Text variant="body-default-l" className={styles.expertiseSubtitle}>
+            A diverse team of specialists bringing innovation and excellence to every project
+          </Text>
         </Column>
-      )}
-      <Row fillWidth s={{ direction: "column" }} horizontal="center">
-        {about.avatar.display && (
-          <Column
-            className={styles.avatar}
-            top="64"
-            fitHeight
-            position="sticky"
-            s={{ position: "relative", style: { top: "auto" } }}
-            xs={{ style: { top: "auto" } }}
-            minWidth="160"
-            paddingX="l"
-            paddingBottom="xl"
-            gap="m"
-            flex={3}
-            horizontal="center"
-          >
-            <Avatar src="/images/logo.png" size="xl" />
-            <Row gap="8" vertical="center">
-              <Icon onBackground="accent-weak" name="globe" />
-              {person.location}
-            </Row>
-            {person.languages && person.languages.length > 0 && (
-              <Row wrap gap="8">
-                {person.languages.map((language, index) => (
-                  <Tag key={index} size="l">
-                    {language}
-                  </Tag>
-                ))}
-              </Row>
-            )}
-          </Column>
-        )}
-        <Column className={styles.blockAlign} flex={9} maxWidth={40}>
-          <Column
-            id={about.intro.title}
-            fillWidth
-            minHeight="160"
-            vertical="center"
-            marginBottom="32"
-          >
-            {about.calendar.display && (
-              <Row
-                fitWidth
-                border="brand-alpha-medium"
-                background="brand-alpha-weak"
-                radius="full"
-                padding="4"
-                gap="8"
-                marginBottom="m"
-                vertical="center"
-                className={styles.blockAlign}
-                style={{
-                  backdropFilter: "blur(var(--static-space-1))",
-                }}
-              >
-                <Icon paddingLeft="12" name="calendar" onBackground="brand-weak" />
-                <Row paddingX="8">Schedule a call</Row>
-                <IconButton
-                  href={about.calendar.link}
-                  data-border="rounded"
-                  variant="secondary"
-                  icon="chevronRight"
-                />
-              </Row>
-            )}
-            <Heading className={styles.textAlign} variant="display-strong-xl">
-              {person.name}
-            </Heading>
-            <Text
-              className={styles.textAlign}
-              variant="display-default-xs"
-              onBackground="neutral-weak"
+        
+        {/* GRID */}
+        <div className={styles.expertiseGrid}>
+          {expertise.map((expert, index) => (
+            <Column
+              key={index}
+              className={styles.expertiseCard} // We'll keep this for hover logic
+              position="relative"
+              overflow="hidden"
+              padding="l"
+              radius="l"
+              background="surface"
+              border="neutral-alpha-weak"
+              gap="s"
             >
-              {person.role}
-            </Text>
-            {social.length > 0 && (
-              <Row
-                className={styles.blockAlign}
-                paddingTop="20"
-                paddingBottom="8"
-                gap="8"
-                wrap
-                horizontal="center"
-                fitWidth
-                data-border="rounded"
-              >
-                {social
-                  .filter((item) => item.essential)
-                  .map(
-                    (item) =>
-                      item.link && (
-                        <React.Fragment key={item.name}>
-                          <Row s={{ hide: true }}>
-                            <Button
-                              key={item.name}
-                              href={item.link}
-                              prefixIcon={item.icon}
-                              label={item.name}
-                              size="s"
-                              weight="default"
-                              variant="secondary"
-                            />
-                          </Row>
-                          <Row hide s={{ hide: false }}>
-                            <IconButton
-                              size="l"
-                              key={`${item.name}-icon`}
-                              href={item.link}
-                              icon={item.icon}
-                              variant="secondary"
-                            />
-                          </Row>
-                        </React.Fragment>
-                      ),
-                  )}
-              </Row>
-            )}
-          </Column>
+              {/* --- MAILCHIMP EFFECT (COPIED EXACTLY) --- */}
+              <Background
+                position="absolute"
+                top="0"
+                left="0"
+                right="0"
+                bottom="0"
+                mask={{
+                  x: mailchimp.effects.mask.x,
+                  y: mailchimp.effects.mask.y,
+                  radius: mailchimp.effects.mask.radius,
+                  cursor: mailchimp.effects.mask.cursor,
+                }}
+                gradient={{
+                  display: mailchimp.effects.gradient.display,
+                  opacity: mailchimp.effects.gradient.opacity as opacity,
+                  x: mailchimp.effects.gradient.x,
+                  y: mailchimp.effects.gradient.y,
+                  width: mailchimp.effects.gradient.width,
+                  height: mailchimp.effects.gradient.height,
+                  tilt: mailchimp.effects.gradient.tilt,
+                  colorStart: mailchimp.effects.gradient.colorStart,
+                  colorEnd: mailchimp.effects.gradient.colorEnd,
+                }}
+                dots={{
+                  display: mailchimp.effects.dots.display,
+                  opacity: mailchimp.effects.dots.opacity as opacity,
+                  size: mailchimp.effects.dots.size as SpacingToken,
+                  color: mailchimp.effects.dots.color,
+                }}
+              />
 
-          {about.intro.display && (
-            <Column textVariant="body-default-l" fillWidth gap="m" marginBottom="xl">
-              {about.intro.description}
+              {/* CONTENT (With zIndex to sit on top of effect) */}
+              <Column fillWidth style={{ zIndex: 1 }} gap="m">
+                <div className={styles.expertiseHeader}>
+                  <Text className={styles.expertiseCount}>
+                    {expert.count}
+                  </Text>
+                  <Heading variant="heading-strong-l" className={styles.expertiseRole}>
+                    {expert.role}
+                  </Heading>
+                </div>
+                
+                <Text variant="body-default-m" className={styles.expertiseDescription}>
+                  {expert.description}
+                </Text>
+                
+                <Row gap="xs" wrap className={styles.expertiseSkills}>
+                  {expert.skills.map((skill, skillIndex) => (
+                    <Tag key={skillIndex} size="s" variant="neutral">
+                      {skill}
+                    </Tag>
+                  ))}
+                </Row>
+              </Column>
             </Column>
-          )}
+          ))}
+        </div>
+      </Column>
 
-          {about.work.display && (
-            <>
-              <Heading as="h2" id={about.work.title} variant="display-strong-s" marginBottom="m">
-                {about.work.title}
-              </Heading>
-              <Column fillWidth gap="l" marginBottom="40">
-                {about.work.experiences.map((experience, index) => (
-                  <Column key={`${experience.company}-${experience.role}-${index}`} fillWidth>
-                    <Row fillWidth horizontal="between" vertical="end" marginBottom="4">
-                      <Text id={experience.company} variant="heading-strong-l">
-                        {experience.company}
-                      </Text>
-                      <Text variant="heading-default-xs" onBackground="neutral-weak">
-                        {experience.timeframe}
-                      </Text>
-                    </Row>
-                    <Text variant="body-default-s" onBackground="brand-weak" marginBottom="m">
-                      {experience.role}
-                    </Text>
-                    <Column as="ul" gap="16">
-                      {experience.achievements.map(
-                        (achievement: React.ReactNode, index: number) => (
-                          <Text
-                            as="li"
-                            variant="body-default-m"
-                            key={`${experience.company}-${index}`}
-                          >
-                            {achievement}
-                          </Text>
-                        ),
-                      )}
-                    </Column>
-                    {experience.images && experience.images.length > 0 && (
-                      <Row fillWidth paddingTop="m" paddingLeft="40" gap="12" wrap>
-                        {experience.images.map((image, index) => (
-                          <Row
-                            key={index}
-                            border="neutral-medium"
-                            radius="m"
-                            minWidth={image.width}
-                            height={image.height}
-                          >
-                            <Media
-                              enlarge
-                              radius="m"
-                              sizes={image.width.toString()}
-                              alt={image.alt}
-                              src={image.src}
-                            />
-                          </Row>
-                        ))}
-                      </Row>
-                    )}
-                  </Column>
-                ))}
-              </Column>
-            </>
-          )}
+      {/* Contact Section */}
+      <Column className={styles.contactSection}>
+        <Heading variant="display-strong-l" className={styles.sectionTitle}>
+          Let's Build Something Great
+        </Heading>
+        <Text variant="body-default-l" className={styles.missionText}>
+          Ready to transform your business with modern technology? Get in touch with us today.
+        </Text>
+        
+        <div className={styles.contactButtons}>
+          <Button 
+            href={`mailto:${company.email}`} 
+            variant="secondary" 
+            size="l"
+          >
+            ✉️ Email Us
+          </Button>
+          <Button 
+            href={`tel:${company.phone}`} 
+            variant="secondary" 
+            size="l"
+          >
+             📞 Call Us
+          </Button>
+        </div>
+      </Column>
 
-          {about.studies.display && (
-            <>
-              <Heading as="h2" id={about.studies.title} variant="display-strong-s" marginBottom="m">
-                {about.studies.title}
-              </Heading>
-              <Column fillWidth gap="l" marginBottom="40">
-                {about.studies.institutions.map((institution, index) => (
-                  <Column key={`${institution.name}-${index}`} fillWidth gap="m">                    
-                    <Text id={institution.name} variant="heading-strong-l">
-                      {institution.name}
-                    </Text>
-                    <Text variant="body-default-m" onBackground="neutral-weak">
-                      {institution.description}
-                    </Text>
-                    {institution.images && institution.images.length > 0 && (
-                      <Row fillWidth paddingTop="m" gap="12" wrap>
-                        {institution.images.map((image, imgIndex) => (
-                          <Row
-                            key={imgIndex}
-                            border="neutral-medium"
-                            radius="m"
-                            minWidth={image.width}
-                            height={image.height}
-                          >
-                            <Media
-                              enlarge
-                              radius="m"
-                              sizes={image.width.toString()}
-                              alt={image.alt}
-                              src={image.src}
-                            />
-                          </Row>
-                        ))}
-                      </Row>
-                    )}
-                  </Column>
-                ))}
-              </Column>
-            </>
-          )}
-
-          {about.technical.display && (
-            <>
-              <Heading
-                as="h2"
-                id={about.technical.title}
-                variant="display-strong-s"
-                marginBottom="40"
-              >
-                {about.technical.title}
-              </Heading>
-              <Column fillWidth gap="l">
-                {about.technical.skills.map((skill, index) => (
-                  <Column key={`${skill}-${index}`} fillWidth gap="4">
-                    <Text id={skill.title} variant="heading-strong-l">
-                      {skill.title}
-                    </Text>
-                    <Text variant="body-default-m" onBackground="neutral-weak">
-                      {skill.description}
-                    </Text>
-                    {skill.tags && skill.tags.length > 0 && (
-                      <Row wrap gap="8" paddingTop="8">
-                        {skill.tags.map((tag, tagIndex) => (
-                          <Tag key={`${skill.title}-${tagIndex}`} size="l" prefixIcon={tag.icon}>
-                            {tag.name}
-                          </Tag>
-                        ))}
-                      </Row>
-                    )}
-                    {skill.images && skill.images.length > 0 && (
-                      <Row fillWidth paddingTop="m" gap="12" wrap>
-                        {skill.images.map((image, index) => (
-                          <Row
-                            key={index}
-                            border="neutral-medium"
-                            radius="m"
-                            minWidth={image.width}
-                            height={image.height}
-                          >
-                            <Media
-                              enlarge
-                              radius="m"
-                              sizes={image.width.toString()}
-                              alt={image.alt}
-                              src={image.src}
-                            />
-                          </Row>
-                        ))}
-                      </Row>
-                    )}
-                  </Column>
-                ))}
-              </Column>
-            </>
-          )}
-        </Column>
-      </Row>
     </Column>
   );
 }
