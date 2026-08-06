@@ -21,21 +21,11 @@ import { Project } from "@/lib/models";
 import AdvancedMarkdown from "@/components/AdvancedMarkdown";
 import { ShareSection } from "@/components/blog/ShareSection";
 
-
-// Generate static params for all projects
-export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  try {
-    await dbConnect();
-    const projects = await Project.find({}).select('slug').lean();
-    
-    return projects.map((project) => ({
-      slug: project.slug,
-    }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
-}
+// Force this route to always render on-demand, never from a static/ISR cache.
+// Every request re-fetches from MongoDB in real time.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 // Generate metadata
 export async function generateMetadata({
