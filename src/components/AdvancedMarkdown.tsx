@@ -1,7 +1,7 @@
 // src/components/AdvancedMarkdown.tsx
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -82,6 +82,87 @@ function MermaidDiagram({ chart }: { chart: string }) {
         justifyContent: 'center',
         alignItems: 'center'
       }} />
+    </div>
+  );
+}
+
+// Image component with orientation-aware sizing.
+// Landscape/wide images (e.g. desktop screenshots) fill the container as before.
+// Portrait/tall images (e.g. mobile screenshots) are capped by height instead
+// of stretching to the full container width, so they don't look oversized.
+function MarkdownImage(props: any) {
+  const { node, ...imgProps } = props;
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const handleLoad = (e: any) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    setIsPortrait(naturalHeight > naturalWidth);
+    setLoaded(true);
+  };
+
+  return (
+    <div style={{
+      marginBottom: '2.5rem',
+      marginTop: '1.5rem',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      width: '100%',
+      clear: 'both'
+    }}>
+      <div style={{
+        position: 'relative',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        border: '3px solid transparent',
+        background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #06b6d4, #0891b2, #22d3ee) border-box',
+        boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)',
+        transition: 'all 0.3s ease',
+        maxWidth: '100%',
+        display: 'inline-block',
+        verticalAlign: 'top'
+      }}
+      onMouseEnter={(e: any) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 12px 32px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.2)';
+      }}
+      onMouseLeave={(e: any) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)';
+      }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          style={{
+            width: isPortrait ? 'auto' : '100%',
+            maxWidth: '100%',
+            maxHeight: isPortrait ? '70vh' : 'none',
+            height: 'auto',
+            display: 'block',
+            borderRadius: '13px',
+            opacity: loaded ? 1 : 0.4,
+            transition: 'opacity 0.2s ease'
+          }}
+          {...imgProps}
+          onLoad={handleLoad}
+          alt={imgProps.alt || ''}
+        />
+      </div>
+      {imgProps.alt && (
+        <p style={{
+          marginTop: '1rem',
+          marginBottom: 0,
+          fontSize: '0.875rem',
+          color: 'var(--neutral-on-background-weak)',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          width: '100%',
+          display: 'block'
+        }}>
+          {imgProps.alt}
+        </p>
+      )}
     </div>
   );
 }
@@ -174,18 +255,53 @@ const markdownComponents = {
   ),
   
   // Paragraphs
-  p: (props: any) => (
-    <Text 
-      as="p"
-      variant="body-default-m" 
-      style={{ 
-        marginBottom: '1.25rem', 
-        lineHeight: '1.8',
-        color: 'var(--neutral-on-background-strong)'
-      }}
-      {...props} 
-    />
-  ),
+  p: (props: any) => {
+    const { node, children, ...rest } = props;
+
+    // A <p> can't legally contain the block-level <div> our img component
+    // renders. When that happens the browser silently breaks the paragraph
+    // apart, orphaning any text that follows the image (e.g. a caption on
+    // the next line) into the wrong part of the layout. Detect that case
+    // and render a <div> instead so everything stays in normal flow.
+    const containsImage = node?.children?.some(
+      (child: any) => child.type === 'image' || child.tagName === 'img'
+    );
+
+    if (containsImage) {
+      return (
+        <div
+          style={{
+            marginBottom: '1.25rem',
+            lineHeight: '1.8',
+            color: 'var(--neutral-on-background-strong)',
+            display: 'block',
+            width: '100%'
+          }}
+          {...rest}
+        >
+          {children}
+        </div>
+      );
+    }
+
+    return (
+      <Text
+        as="p"
+        variant="body-default-m"
+        style={{
+          marginBottom: '1.25rem',
+          lineHeight: '1.8',
+          color: 'var(--neutral-on-background-strong)',
+          display: 'block',
+          width: '100%',
+          clear: 'both'
+        }}
+        {...rest}
+      >
+        {children}
+      </Text>
+    );
+  },
   
   // Links - Cyan color styling
   a: (props: any) => (
@@ -508,64 +624,8 @@ const markdownComponents = {
     />
   ),
 
-  // Images with enhanced design borders and effects
-  img: (props: any) => {
-    const { node, ...imgProps } = props;
-    return (
-      <div style={{
-        marginBottom: '2.5rem',
-        marginTop: '1.5rem',
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          position: 'relative',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          border: '3px solid transparent',
-          background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #06b6d4, #0891b2, #22d3ee) border-box',
-          boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)',
-          transition: 'all 0.3s ease',
-          maxWidth: '100%',
-          display: 'inline-block'
-        }}
-        onMouseEnter={(e: any) => {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 32px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.2)';
-        }}
-        onMouseLeave={(e: any) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)';
-        }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            style={{
-              maxWidth: '100%',
-              maxHeight: '70vh',   // <-- caps tall/portrait screenshots
-              width: 'auto',
-              height: 'auto',
-              display: 'block',
-              borderRadius: '13px'
-            }}
-            {...imgProps}
-            alt={imgProps.alt || ''}
-          />
-        </div>
-        {imgProps.alt && (
-          <p style={{
-            marginTop: '1rem',
-            fontSize: '0.875rem',
-            color: 'var(--neutral-on-background-weak)',
-            fontStyle: 'italic',
-            textAlign: 'center'
-          }}>
-            {imgProps.alt}
-          </p>
-        )}
-      </div>
-    );
-  },
+  // Images with enhanced design borders, effects, and orientation-aware sizing
+  img: (props: any) => <MarkdownImage {...props} />,
 };
 
 export function AdvancedMarkdown({ source, className }: AdvancedMarkdownProps) {
