@@ -514,7 +514,9 @@ const markdownComponents = {
     return (
       <div style={{
         marginBottom: '2.5rem',
-        marginTop: '1.5rem'
+        marginTop: '1.5rem',
+        display: 'flex',
+        justifyContent: 'center'
       }}>
         <div style={{
           position: 'relative',
@@ -523,7 +525,9 @@ const markdownComponents = {
           border: '3px solid transparent',
           background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #06b6d4, #0891b2, #22d3ee) border-box',
           boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(6, 182, 212, 0.1)',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          maxWidth: '100%',
+          display: 'inline-block'
         }}
         onMouseEnter={(e: any) => {
           e.currentTarget.style.transform = 'translateY(-4px)';
@@ -537,7 +541,9 @@ const markdownComponents = {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             style={{
-              width: '100%',
+              maxWidth: '100%',
+              maxHeight: '70vh',   // <-- caps tall/portrait screenshots
+              width: 'auto',
               height: 'auto',
               display: 'block',
               borderRadius: '13px'
