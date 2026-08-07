@@ -60,6 +60,8 @@ function MermaidDiagram({ chart }: { chart: string }) {
         }
       };
 
+      //
+
       renderDiagram();
     }
   }, [chart]);
