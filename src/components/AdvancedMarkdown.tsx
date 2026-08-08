@@ -1,7 +1,8 @@
 // src/components/AdvancedMarkdown.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -13,13 +14,255 @@ interface AdvancedMarkdownProps {
   className?: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// LIGHTBOX — clicking any markdown image opens it fullscreen.
+// If the image is landscape (wider than tall) but the viewport
+// is portrait (taller than wide, i.e. a phone held normally),
+// the image is rotated 90° so it fills the screen using its
+// long edge instead of being capped by the short edge.
+// ─────────────────────────────────────────────────────────────
+interface LightboxImage {
+  src: string;
+  alt: string;
+  isPortrait: boolean; // naturalHeight > naturalWidth
+}
+
+interface LightboxContextValue {
+  open: (img: LightboxImage) => void;
+}
+
+const LightboxContext = createContext<LightboxContextValue | null>(null);
+
+function useLightbox() {
+  const ctx = useContext(LightboxContext);
+  if (!ctx) throw new Error('useLightbox must be used within LightboxProvider');
+  return ctx;
+}
+
+function useViewportIsPortrait() {
+  const [viewportPortrait, setViewportPortrait] = useState(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: portrait)');
+    const update = () => setViewportPortrait(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  return viewportPortrait;
+}
+
+function Lightbox({
+  image,
+  onClose,
+}: {
+  image: LightboxImage | null;
+  onClose: () => void;
+}) {
+  const viewportPortrait = useViewportIsPortrait();
+  const [manualRotate, setManualRotate] = useState(false);
+
+  // Reset manual override whenever a new image is opened
+  useEffect(() => {
+    setManualRotate(false);
+  }, [image?.src]);
+
+  useEffect(() => {
+    if (!image) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key.toLowerCase() === 'r') setManualRotate((v) => !v);
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [image, onClose]);
+
+  if (!image || typeof document === 'undefined') return null;
+
+  const imageIsLandscape = !image.isPortrait;
+  const autoRotate = imageIsLandscape && viewportPortrait;
+  const shouldRotate = autoRotate !== manualRotate; // manual toggle flips auto decision
+
+  return createPortal(
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        background: 'rgba(5, 8, 15, 0.94)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        animation: 'lightbox-fade-in 0.15s ease-out',
+      }}
+    >
+      <style>{`
+        @keyframes lightbox-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+
+      {/* Close button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="Close"
+        style={{
+          position: 'fixed',
+          top: '1rem',
+          right: '1rem',
+          zIndex: 1002,
+          width: '44px',
+          height: '44px',
+          borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.2)',
+          background: 'rgba(0,0,0,0.5)',
+          color: '#fff',
+          fontSize: '1.25rem',
+          lineHeight: 1,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        ✕
+      </button>
+
+      {/* Rotate toggle — only useful when the image is landscape */}
+      {imageIsLandscape && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setManualRotate((v) => !v);
+          }}
+          aria-label="Rotate image"
+          style={{
+            position: 'fixed',
+            top: '1rem',
+            right: '4.25rem',
+            zIndex: 1002,
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(0,0,0,0.5)',
+            color: '#fff',
+            fontSize: '1.1rem',
+            lineHeight: 1,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          ⟳
+        </button>
+      )}
+
+      {shouldRotate ? (
+        // Rotated box: pre-rotation dimensions are swapped (100vh x 100vw)
+        // so that after a 90° rotation about its own center, its visual
+        // footprint matches the viewport instead of being capped by the
+        // short edge.
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '100vh',
+            height: '100vw',
+            transform: 'translate(-50%, -50%) rotate(90deg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image.src}
+            alt={image.alt}
+            style={{
+              maxWidth: '96%',
+              maxHeight: '96%',
+              objectFit: 'contain',
+              borderRadius: '8px',
+            }}
+          />
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          onClick={(e) => e.stopPropagation()}
+          src={image.src}
+          alt={image.alt}
+          style={{
+            maxWidth: '96vw',
+            maxHeight: '96vh',
+            objectFit: 'contain',
+            borderRadius: '8px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          }}
+        />
+      )}
+
+      {image.alt && (
+        <p
+          style={{
+            position: 'fixed',
+            bottom: '1.25rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: 'rgba(255,255,255,0.75)',
+            fontSize: '0.8rem',
+            fontStyle: 'italic',
+            textAlign: 'center',
+            maxWidth: '90vw',
+            zIndex: 1002,
+          }}
+        >
+          {image.alt}
+        </p>
+      )}
+    </div>,
+    document.body
+  );
+}
+
+function LightboxProvider({ children }: { children: React.ReactNode }) {
+  const [image, setImage] = useState<LightboxImage | null>(null);
+
+  const open = useCallback((img: LightboxImage) => setImage(img), []);
+  const close = useCallback(() => setImage(null), []);
+
+  return (
+    <LightboxContext.Provider value={{ open }}>
+      {children}
+      <Lightbox image={image} onClose={close} />
+    </LightboxContext.Provider>
+  );
+}
+
 // Mermaid diagram component
 function MermaidDiagram({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (ref.current) {
-      // Initialize mermaid with custom theme
       mermaid.initialize({
         startOnLoad: false,
         theme: 'dark',
@@ -44,7 +287,6 @@ function MermaidDiagram({ chart }: { chart: string }) {
         }
       });
 
-      // Render the mermaid diagram
       const renderDiagram = async () => {
         try {
           const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
@@ -59,8 +301,6 @@ function MermaidDiagram({ chart }: { chart: string }) {
           }
         }
       };
-
-      //
 
       renderDiagram();
     }
@@ -86,14 +326,12 @@ function MermaidDiagram({ chart }: { chart: string }) {
   );
 }
 
-// Image component with orientation-aware sizing.
-// Landscape/wide images (e.g. desktop screenshots) fill the container as before.
-// Portrait/tall images (e.g. mobile screenshots) are capped by height instead
-// of stretching to the full container width, so they don't look oversized.
+// Image component with orientation-aware inline sizing AND click-to-fullscreen.
 function MarkdownImage(props: any) {
   const { node, ...imgProps } = props;
   const [isPortrait, setIsPortrait] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const { open } = useLightbox();
 
   const handleLoad = (e: any) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
@@ -121,7 +359,13 @@ function MarkdownImage(props: any) {
         transition: 'all 0.3s ease',
         maxWidth: '100%',
         display: 'inline-block',
-        verticalAlign: 'top'
+        verticalAlign: 'top',
+        cursor: 'zoom-in'
+      }}
+      onClick={() => {
+        if (imgProps.src) {
+          open({ src: imgProps.src, alt: imgProps.alt || '', isPortrait });
+        }
       }}
       onMouseEnter={(e: any) => {
         e.currentTarget.style.transform = 'translateY(-4px)';
@@ -169,7 +413,6 @@ function MarkdownImage(props: any) {
 
 // Enhanced markdown components with comprehensive styling
 const markdownComponents = {
-  // Headings with proper spacing
   h1: (props: any) => (
     <Heading 
       as="h1"
@@ -254,15 +497,9 @@ const markdownComponents = {
     />
   ),
   
-  // Paragraphs
   p: (props: any) => {
     const { node, children, ...rest } = props;
 
-    // A <p> can't legally contain the block-level <div> our img component
-    // renders. When that happens the browser silently breaks the paragraph
-    // apart, orphaning any text that follows the image (e.g. a caption on
-    // the next line) into the wrong part of the layout. Detect that case
-    // and render a <div> instead so everything stays in normal flow.
     const containsImage = node?.children?.some(
       (child: any) => child.type === 'image' || child.tagName === 'img'
     );
@@ -303,7 +540,6 @@ const markdownComponents = {
     );
   },
   
-  // Links - Cyan color styling
   a: (props: any) => (
     <SmartLink 
       style={{
@@ -327,7 +563,6 @@ const markdownComponents = {
     />
   ),
   
-  // Unordered Lists
   ul: (props: any) => (
     <ul 
       style={{ 
@@ -341,7 +576,6 @@ const markdownComponents = {
     />
   ),
   
-  // Ordered Lists
   ol: (props: any) => (
     <ol 
       style={{ 
@@ -355,7 +589,6 @@ const markdownComponents = {
     />
   ),
   
-  // List Items
   li: (props: any) => (
     <li 
       style={{ 
@@ -367,7 +600,6 @@ const markdownComponents = {
     />
   ),
   
-  // Strong/Bold
   strong: (props: any) => (
     <strong 
       style={{ 
@@ -378,7 +610,6 @@ const markdownComponents = {
     />
   ),
   
-  // Emphasis/Italic
   em: (props: any) => (
     <em 
       style={{ 
@@ -389,18 +620,15 @@ const markdownComponents = {
     />
   ),
   
-  // Code
   code: (props: any) => {
     const { children, className, node, ...rest } = props;
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : '';
     
-    // Mermaid diagram
     if (language === 'mermaid') {
       return <MermaidDiagram chart={String(children).trim()} />;
     }
     
-    // Code block (from fenced code blocks)
     if (match) {
       return (
         <div style={{
@@ -411,7 +639,6 @@ const markdownComponents = {
           border: '1px solid var(--neutral-alpha-medium)',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
         }}>
-          {/* Language badge */}
           <div style={{
             background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
             padding: '0.5rem 1rem',
@@ -453,7 +680,6 @@ const markdownComponents = {
       );
     }
     
-    // Inline code
     return (
       <code 
         style={{ 
@@ -473,15 +699,12 @@ const markdownComponents = {
     );
   },
   
-  // Pre (wraps code blocks and ASCII diagrams)
   pre: (props: any) => {
     const { children, node, ...rest } = props;
     
-    // Check if this is a plain text block (like ASCII diagrams) without language specification
     const hasCodeChild = children?.props?.className?.startsWith('language-');
     
     if (!hasCodeChild && typeof children === 'object' && children?.props?.children) {
-      // This is likely an ASCII diagram or plain code block
       return (
         <div style={{
           position: 'relative',
@@ -514,7 +737,6 @@ const markdownComponents = {
     return <>{children}</>;
   },
   
-  // Blockquotes
   blockquote: (props: any) => (
     <blockquote 
       style={{ 
@@ -535,7 +757,6 @@ const markdownComponents = {
     />
   ),
   
-  // Horizontal Rule
   hr: (props: any) => (
     <hr 
       style={{ 
@@ -549,7 +770,6 @@ const markdownComponents = {
     />
   ),
   
-  // Tables
   table: (props: any) => (
     <div style={{ 
       overflowX: 'auto', 
@@ -624,28 +844,29 @@ const markdownComponents = {
     />
   ),
 
-  // Images with enhanced design borders, effects, and orientation-aware sizing
   img: (props: any) => <MarkdownImage {...props} />,
 };
 
 export function AdvancedMarkdown({ source, className }: AdvancedMarkdownProps) {
   return (
-    <div 
-      className={className}
-      style={{
-        maxWidth: '85vw',
-        width: '100%',
-        margin: '0 auto',
-        padding: '2rem'
-      }}
-    >
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
-        components={markdownComponents}
+    <LightboxProvider>
+      <div 
+        className={className}
+        style={{
+          maxWidth: '85vw',
+          width: '100%',
+          margin: '0 auto',
+          padding: '2rem'
+        }}
       >
-        {source}
-      </ReactMarkdown>
-    </div>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          components={markdownComponents}
+        >
+          {source}
+        </ReactMarkdown>
+      </div>
+    </LightboxProvider>
   );
 }
 
